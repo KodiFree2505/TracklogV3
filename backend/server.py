@@ -77,7 +77,12 @@ app.mount("/api/uploads", StaticFiles(directory=str(ROOT_DIR / "uploads")), name
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://localhost:3000",
+        "https://rail-tracker-9.preview.emergentagent.com",
+        "https://rail-tracker-9.emergent.host"
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
