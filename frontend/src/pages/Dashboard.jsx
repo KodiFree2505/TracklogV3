@@ -46,37 +46,21 @@ const TopList = ({ icon: Icon, title, items, loading }) => (
 );
 
 const Dashboard = () => {
-  const { user, logout, loading, checkAuth } = useAuth();
+  const { user, logout, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [isAuthenticated, setIsAuthenticated] = useState(location.state?.user ? true : null);
-  const [currentUser, setCurrentUser] = useState(location.state?.user || null);
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
-  useEffect(() => {
-    if (location.state?.user) {
-      setCurrentUser(location.state.user);
-      setIsAuthenticated(true);
-      return;
-    }
-    const verifyAuth = async () => {
-      await checkAuth();
-    };
-    verifyAuth();
-  }, [location.state, checkAuth]);
+  // Get user from location state (passed after login) or from auth context
+  const currentUser = location.state?.user || user;
 
   useEffect(() => {
-    if (!loading && !location.state?.user) {
-      if (user) {
-        setCurrentUser(user);
-        setIsAuthenticated(true);
-      } else {
-        setIsAuthenticated(false);
-        navigate('/auth');
-      }
+    // Only redirect if not loading and no user from either source
+    if (!loading && !currentUser) {
+      navigate('/auth');
     }
-  }, [user, loading, navigate, location.state]);
+  }, [loading, currentUser, navigate]);
 
   useEffect(() => {
     const fetchStats = async () => {
