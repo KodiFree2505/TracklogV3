@@ -63,7 +63,7 @@ const MySightings = () => {
     return s.train_number.toLowerCase().includes(term) || s.operator.toLowerCase().includes(term) || s.location.toLowerCase().includes(term);
   });
 
-  if (isAuthenticated === null || loading) {
+  if (loading || !user) {
     return <div className="min-h-screen bg-[#0f0f10] flex items-center justify-center"><Loader2 className="w-8 h-8 text-[#e34c26] animate-spin" /></div>;
   }
 
