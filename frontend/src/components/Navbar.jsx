@@ -25,11 +25,13 @@ const Navbar = () => {
           >
             Login
           </a>
-          <Button 
-            className="bg-[#e34c26] hover:bg-[#d14020] text-white font-semibold text-xs uppercase tracking-wider px-6 py-2 h-9 rounded"
-          >
-            Get Started
-          </Button>
+          <a href="/auth?signup=true">
+            <Button 
+              className="bg-[#e34c26] hover:bg-[#d14020] text-white font-semibold text-xs uppercase tracking-wider px-6 py-2 h-9 rounded"
+            >
+              Get Started
+            </Button>
+          </a>
         </div>
       </div>
     </nav>
