@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -9,7 +10,8 @@ from pydantic import BaseModel, Field
 from typing import List
 import uuid
 from datetime import datetime
-from auth import auth_router, set_db
+from auth import auth_router, set_db as set_auth_db
+from sightings import sightings_router, set_db as set_sightings_db
 
 
 ROOT_DIR = Path(__file__).parent
@@ -20,8 +22,12 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Set database for auth module
-set_db(db)
+# Set database for modules
+set_auth_db(db)
+set_sightings_db(db)
+
+# Ensure uploads directory exists
+os.makedirs(ROOT_DIR / "uploads", exist_ok=True)
 
 # Create the main app without a prefix
 app = FastAPI()
@@ -59,8 +65,14 @@ async def get_status_checks():
 # Include auth router
 api_router.include_router(auth_router)
 
+# Include sightings router
+api_router.include_router(sightings_router)
+
 # Include the router in the main app
 app.include_router(api_router)
+
+# Mount static files for uploads
+app.mount("/api/uploads", StaticFiles(directory=str(ROOT_DIR / "uploads")), name="uploads")
 
 app.add_middleware(
     CORSMiddleware,
