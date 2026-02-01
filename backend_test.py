@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Backend Authentication API Testing for TrackLog App
-Tests all authentication endpoints with comprehensive scenarios
+Backend API Testing for TrackLog App
+Tests authentication and sightings endpoints with comprehensive scenarios
 """
 
 import requests
