@@ -6,6 +6,8 @@ import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
 import AuthCallback from "./pages/AuthCallback";
 import Dashboard from "./pages/Dashboard";
+import LogSighting from "./pages/LogSighting";
+import MySightings from "./pages/MySightings";
 
 // Router component that checks for session_id in URL hash
 function AppRouter() {
@@ -22,6 +24,8 @@ function AppRouter() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/log-sighting" element={<LogSighting />} />
+      <Route path="/sightings" element={<MySightings />} />
     </Routes>
   );
 }
