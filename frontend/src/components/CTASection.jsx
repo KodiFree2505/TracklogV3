@@ -82,11 +82,13 @@ const CTASection = () => {
           Join the community of rail enthusiasts who log their sightings with precision.
         </p>
 
-        <Button 
-          className="bg-[#e34c26] hover:bg-[#d14020] text-white font-semibold text-sm uppercase tracking-wider px-8 py-6 rounded"
-        >
-          Create Free Account
-        </Button>
+        <a href="/auth?signup=true">
+          <Button 
+            className="bg-[#e34c26] hover:bg-[#d14020] text-white font-semibold text-sm uppercase tracking-wider px-8 py-6 rounded"
+          >
+            Create Free Account
+          </Button>
+        </a>
       </div>
     </section>
   );
