@@ -3,12 +3,47 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   LayoutGrid, LogOut, Camera, BarChart3, MapPin, Clock, User, Loader2,
-  Plus, Train, Building2, TrendingUp, Calendar
+  Plus, Train, Building2, Calendar
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+
+const StatCard = ({ icon: Icon, label, value }) => (
+  <div className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-6 hover:border-orange-500/30 transition-colors">
+    <div className="w-10 h-10 bg-[#2a1a1a] rounded-lg flex items-center justify-center mb-4">
+      <Icon size={20} className="text-orange-500" />
+    </div>
+    <p className="text-gray-400 text-sm mb-1">{label}</p>
+    <p className="text-white text-2xl font-bold">{value}</p>
+  </div>
+);
+
+const TopList = ({ icon: Icon, title, items, loading }) => (
+  <div className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-6">
+    <div className="flex items-center gap-2 mb-4">
+      <Icon size={18} className="text-orange-500" />
+      <h3 className="text-white font-semibold">{title}</h3>
+    </div>
+    {loading ? (
+      <div className="flex justify-center py-8">
+        <Loader2 className="w-6 h-6 text-orange-500 animate-spin" />
+      </div>
+    ) : items && items.length > 0 ? (
+      <div className="space-y-3">
+        {items.map((item, i) => (
+          <div key={i} className="flex items-center justify-between">
+            <span className="text-gray-300 text-sm">{item.name}</span>
+            <span className="text-orange-500 font-semibold">{item.count}</span>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <p className="text-gray-500 text-sm text-center py-4">No data yet</p>
+    )}
+  </div>
+);
 
 const Dashboard = () => {
   const { user, logout, loading, checkAuth } = useAuth();
@@ -43,7 +78,6 @@ const Dashboard = () => {
     }
   }, [user, loading, navigate, location.state]);
 
-  // Fetch stats when authenticated
   useEffect(() => {
     const fetchStats = async () => {
       if (!isAuthenticated) return;
@@ -88,9 +122,13 @@ const Dashboard = () => {
     return d.toLocaleDateString();
   };
 
+  const totalSightings = statsLoading ? '...' : (stats?.total_sightings || 0);
+  const thisMonth = statsLoading ? '...' : (stats?.this_month || 0);
+  const uniqueLocations = statsLoading ? '...' : (stats?.unique_locations || 0);
+  const lastSighting = statsLoading ? '...' : formatLastSighting(stats?.last_sighting);
+
   return (
     <div className="min-h-screen bg-[#0f0f10]">
-      {/* Header */}
       <header className="bg-[#FFE500] h-[52px] flex items-center justify-between px-6 md:px-12">
         <Link to="/" className="flex items-center gap-2">
           <div className="text-[#e34c26]">
@@ -122,7 +160,6 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-6xl mx-auto px-6 py-12">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -138,94 +175,34 @@ const Dashboard = () => {
           </Link>
         </div>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-          {[
-            { icon: Camera, label: 'Total Sightings', value: statsLoading ? '...' : (stats?.total_sightings || 0) },
-            { icon: Calendar, label: 'This Month', value: statsLoading ? '...' : (stats?.this_month || 0) },
-            { icon: MapPin, label: 'Locations', value: statsLoading ? '...' : (stats?.unique_locations || 0) },
-            { icon: Clock, label: 'Last Sighting', value: statsLoading ? '...' : formatLastSighting(stats?.last_sighting) }
-          ].map((stat, index) => (
-            <div key={index} className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-6 hover:border-orange-500/30 transition-colors">
-              <div className="w-10 h-10 bg-[#2a1a1a] rounded-lg flex items-center justify-center mb-4">
-                <stat.icon size={20} className="text-orange-500" />
-              </div>
-              <p className="text-gray-400 text-sm mb-1">{stat.label}</p>
-              <p className="text-white text-2xl font-bold">{stat.value}</p>
-            </div>
-          ))}
+          <StatCard icon={Camera} label="Total Sightings" value={totalSightings} />
+          <StatCard icon={Calendar} label="This Month" value={thisMonth} />
+          <StatCard icon={MapPin} label="Locations" value={uniqueLocations} />
+          <StatCard icon={Clock} label="Last Sighting" value={lastSighting} />
         </div>
 
-        {/* Charts/Analytics Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          {/* Top Train Types */}
-          <div className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Train size={18} className="text-orange-500" />
-              <h3 className="text-white font-semibold">Top Train Types</h3>
-            </div>
-            {statsLoading ? (
-              <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 text-orange-500 animate-spin" /></div>
-            ) : stats?.top_train_types?.length > 0 ? (
-              <div className="space-y-3">
-                {stats.top_train_types.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between">
-                    <span className="text-gray-300 text-sm">{item.name}</span>
-                    <span className="text-orange-500 font-semibold">{item.count}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-sm text-center py-4">No data yet</p>
-            )}
-          </div>
-
-          {/* Top Operators */}
-          <div className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Building2 size={18} className="text-orange-500" />
-              <h3 className="text-white font-semibold">Top Operators</h3>
-            </div>
-            {statsLoading ? (
-              <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 text-orange-500 animate-spin" /></div>
-            ) : stats?.top_operators?.length > 0 ? (
-              <div className="space-y-3">
-                {stats.top_operators.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between">
-                    <span className="text-gray-300 text-sm">{item.name}</span>
-                    <span className="text-orange-500 font-semibold">{item.count}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-sm text-center py-4">No data yet</p>
-            )}
-          </div>
-
-          {/* Top Locations */}
-          <div className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <MapPin size={18} className="text-orange-500" />
-              <h3 className="text-white font-semibold">Top Locations</h3>
-            </div>
-            {statsLoading ? (
-              <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 text-orange-500 animate-spin" /></div>
-            ) : stats?.top_locations?.length > 0 ? (
-              <div className="space-y-3">
-                {stats.top_locations.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between">
-                    <span className="text-gray-300 text-sm">{item.name}</span>
-                    <span className="text-orange-500 font-semibold">{item.count}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-sm text-center py-4">No data yet</p>
-            )}
-          </div>
+          <TopList 
+            icon={Train} 
+            title="Top Train Types" 
+            items={stats?.top_train_types} 
+            loading={statsLoading} 
+          />
+          <TopList 
+            icon={Building2} 
+            title="Top Operators" 
+            items={stats?.top_operators} 
+            loading={statsLoading} 
+          />
+          <TopList 
+            icon={MapPin} 
+            title="Top Locations" 
+            items={stats?.top_locations} 
+            loading={statsLoading} 
+          />
         </div>
 
-        {/* Quick Actions */}
         {(!stats || stats.total_sightings === 0) && (
           <div className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-8 text-center">
             <Camera size={48} className="text-orange-500 mx-auto mb-4" />
