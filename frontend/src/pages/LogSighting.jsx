@@ -154,12 +154,12 @@ const LogSighting = () => {
         </nav>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            {currentUser?.picture ? (
-              <img src={currentUser.picture} alt={currentUser.name} className="w-8 h-8 rounded-full" />
+            {user?.picture ? (
+              <img src={user.picture} alt={user.name} className="w-8 h-8 rounded-full" />
             ) : (
               <div className="w-8 h-8 rounded-full bg-[#e34c26] flex items-center justify-center text-white"><User size={16} /></div>
             )}
-            <span className="text-gray-800 font-medium text-sm hidden md:block">{currentUser?.name}</span>
+            <span className="text-gray-800 font-medium text-sm hidden md:block">{user?.name}</span>
           </div>
           <Button onClick={handleLogout} variant="outline" size="sm" className="border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white">
             <LogOut size={16} className="mr-1" /> Logout
