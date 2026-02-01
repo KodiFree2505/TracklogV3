@@ -1,5 +1,5 @@
 import React from 'react';
-import { Train } from 'lucide-react';
+import { LayoutGrid } from 'lucide-react';
 
 const Footer = () => {
   return (
@@ -7,16 +7,16 @@ const Footer = () => {
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <div className="text-orange-600">
-            <Train size={20} strokeWidth={2} />
+          <div className="text-gray-500">
+            <LayoutGrid size={18} strokeWidth={2.5} />
           </div>
-          <span className="text-gray-400 font-semibold text-sm tracking-wider uppercase">
+          <span className="text-gray-500 font-semibold text-sm tracking-wider uppercase">
             TrackLog
           </span>
         </div>
 
         {/* Copyright */}
-        <p className="text-gray-500 text-xs tracking-wide" style={{ fontFamily: 'monospace' }}>
+        <p className="text-gray-600 text-xs tracking-wide" style={{ fontFamily: 'monospace' }}>
           © 2026 TrackLog. Built for rail enthusiasts.
         </p>
 
