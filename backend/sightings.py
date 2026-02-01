@@ -19,6 +19,7 @@ def set_db(database):
 class SightingCreate(BaseModel):
     train_number: str
     train_type: str
+    traction_type: str
     operator: str
     route: Optional[str] = None
     location: str
@@ -30,6 +31,7 @@ class SightingCreate(BaseModel):
 class SightingUpdate(BaseModel):
     train_number: Optional[str] = None
     train_type: Optional[str] = None
+    traction_type: Optional[str] = None
     operator: Optional[str] = None
     route: Optional[str] = None
     location: Optional[str] = None
@@ -43,6 +45,7 @@ class SightingResponse(BaseModel):
     user_id: str
     train_number: str
     train_type: str
+    traction_type: Optional[str] = None
     operator: str
     route: Optional[str] = None
     location: str
