@@ -589,5 +589,5 @@ class TrackLogTester:
                 print(f"  - {result['test']}: {result['message']}")
 
 if __name__ == "__main__":
-    tester = AuthTester()
+    tester = TrackLogTester()
     tester.run_all_tests()
