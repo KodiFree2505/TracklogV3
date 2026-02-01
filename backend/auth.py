@@ -1,15 +1,19 @@
-from fastapi import APIRouter, HTTPException, Response, Request, Depends
+from fastapi import APIRouter, HTTPException, Response, Request
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime, timezone, timedelta
 import uuid
 import httpx
+import os
 from passlib.context import CryptContext
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Detect if we're in production (HTTPS) or development (HTTP)
+IS_PRODUCTION = os.environ.get("ENVIRONMENT", "development") == "production"
 
 # Models
 class UserCreate(BaseModel):
@@ -42,6 +46,27 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
+
+def set_session_cookie(response: Response, session_token: str):
+    """Set session cookie with appropriate settings for environment"""
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,
+        secure=IS_PRODUCTION,
+        samesite="lax",
+        path="/",
+        max_age=7 * 24 * 60 * 60
+    )
+
+def clear_session_cookie(response: Response):
+    """Clear session cookie"""
+    response.delete_cookie(
+        key="session_token",
+        path="/",
+        secure=IS_PRODUCTION,
+        samesite="lax"
+    )
 
 async def get_current_user(request: Request) -> dict:
     """Get current user from session token in cookie or Authorization header"""
@@ -116,15 +141,7 @@ async def register(user_data: UserCreate, response: Response):
     await db.user_sessions.insert_one(session_doc)
     
     # Set cookie
-    response.set_cookie(
-        key="session_token",
-        value=session_token,
-        httponly=True,
-        secure=True,
-        samesite="none",
-        path="/",
-        max_age=7 * 24 * 60 * 60
-    )
+    set_session_cookie(response, session_token)
     
     return UserResponse(
         user_id=user_id,
@@ -162,15 +179,7 @@ async def login(user_data: UserLogin, response: Response):
     await db.user_sessions.insert_one(session_doc)
     
     # Set cookie
-    response.set_cookie(
-        key="session_token",
-        value=session_token,
-        httponly=True,
-        secure=True,
-        samesite="none",
-        path="/",
-        max_age=7 * 24 * 60 * 60
-    )
+    set_session_cookie(response, session_token)
     
     return UserResponse(
         user_id=user_doc["user_id"],
@@ -231,15 +240,7 @@ async def exchange_session(session_data: SessionRequest, response: Response):
     await db.user_sessions.insert_one(session_doc)
     
     # Set cookie
-    response.set_cookie(
-        key="session_token",
-        value=session_token,
-        httponly=True,
-        secure=True,
-        samesite="none",
-        path="/",
-        max_age=7 * 24 * 60 * 60
-    )
+    set_session_cookie(response, session_token)
     
     return {
         "user_id": user_id,
@@ -267,11 +268,6 @@ async def logout(request: Request, response: Response):
     if session_token:
         await db.user_sessions.delete_one({"session_token": session_token})
     
-    response.delete_cookie(
-        key="session_token",
-        path="/",
-        secure=True,
-        samesite="none"
-    )
+    clear_session_cookie(response)
     
     return {"message": "Logged out successfully"}
