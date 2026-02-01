@@ -27,182 +27,19 @@ import {
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const SightingCard = ({ sighting, onDelete, onClick }) => {
-  const photoUrl = sighting.photos && sighting.photos.length > 0
-    ? (sighting.photos[0].startsWith('/api') ? `${BACKEND_URL}${sighting.photos[0]}` : sighting.photos[0])
-    : null;
+function formatDate(dateStr) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
 
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  return (
-    <div
-      className="bg-[#1a1a1c] border border-gray-800 rounded-lg overflow-hidden hover:border-orange-500/30 transition-colors group cursor-pointer"
-      onClick={onClick}
-    >
-      <div className="aspect-video bg-gray-800 relative overflow-hidden">
-        {photoUrl ? (
-          <img
-            src={photoUrl}
-            alt={sighting.train_number}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Train size={48} className="text-gray-700" />
-          </div>
-        )}
-        {sighting.photos && sighting.photos.length > 1 && (
-          <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-xs text-white">
-            +{sighting.photos.length - 1} more
-          </div>
-        )}
-      </div>
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-2">
-          <div>
-            <h3 className="text-white font-semibold text-lg">{sighting.train_number}</h3>
-            <p className="text-orange-500 text-sm">{sighting.train_type}</p>
-          </div>
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(sighting.sighting_id); }}
-            className="text-gray-500 hover:text-red-500 transition-colors p-1"
-          >
-            <Trash2 size={16} />
-          </button>
-        </div>
-        <div className="space-y-1 text-sm text-gray-400">
-          <p className="flex items-center gap-2">
-            <MapPin size={14} /> {sighting.location}
-          </p>
-          <p className="flex items-center gap-2">
-            <Calendar size={14} /> {formatDate(sighting.sighting_date)}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const SightingRow = ({ sighting, onDelete, onClick }) => {
-  const photoUrl = sighting.photos && sighting.photos.length > 0
-    ? (sighting.photos[0].startsWith('/api') ? `${BACKEND_URL}${sighting.photos[0]}` : sighting.photos[0])
-    : null;
-
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  return (
-    <div
-      className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-4 flex gap-4 hover:border-orange-500/30 transition-colors cursor-pointer"
-      onClick={onClick}
-    >
-      <div className="w-24 h-24 rounded-lg bg-gray-800 flex-shrink-0 overflow-hidden">
-        {photoUrl ? (
-          <img src={photoUrl} alt={sighting.train_number} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Train size={32} className="text-gray-700" />
-          </div>
-        )}
-      </div>
-      <div className="flex-1">
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-white font-semibold">{sighting.train_number}</h3>
-            <p className="text-orange-500 text-sm">{sighting.train_type} • {sighting.operator}</p>
-          </div>
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(sighting.sighting_id); }}
-            className="text-gray-500 hover:text-red-500 transition-colors p-1"
-          >
-            <Trash2 size={16} />
-          </button>
-        </div>
-        <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-400">
-          <span className="flex items-center gap-1"><MapPin size={14} /> {sighting.location}</span>
-          <span className="flex items-center gap-1"><Calendar size={14} /> {formatDate(sighting.sighting_date)}</span>
-          <span className="flex items-center gap-1"><Clock size={14} /> {sighting.sighting_time}</span>
-        </div>
-        {sighting.notes && (
-          <p className="text-gray-500 text-sm mt-2 line-clamp-1">{sighting.notes}</p>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const SightingDetail = ({ sighting }) => {
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  return (
-    <>
-      <DialogHeader>
-        <DialogTitle className="text-white text-xl flex items-center gap-2">
-          <Train size={20} className="text-orange-500" />
-          {sighting.train_number}
-        </DialogTitle>
-      </DialogHeader>
-
-      {sighting.photos && sighting.photos.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 mb-4">
-          {sighting.photos.map((photo, i) => (
-            <img
-              key={i}
-              src={photo.startsWith('/api') ? `${BACKEND_URL}${photo}` : photo}
-              alt={`Photo ${i + 1}`}
-              className="w-full aspect-video object-cover rounded-lg"
-            />
-          ))}
-        </div>
-      )}
-
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-gray-500 text-sm">Train Type</p>
-            <p className="text-white">{sighting.train_type}</p>
-          </div>
-          <div>
-            <p className="text-gray-500 text-sm">Operator</p>
-            <p className="text-white">{sighting.operator}</p>
-          </div>
-          {sighting.route && (
-            <div className="col-span-2">
-              <p className="text-gray-500 text-sm">Route</p>
-              <p className="text-white">{sighting.route}</p>
-            </div>
-          )}
-          <div className="col-span-2">
-            <p className="text-gray-500 text-sm">Location</p>
-            <p className="text-white">{sighting.location}</p>
-          </div>
-          <div>
-            <p className="text-gray-500 text-sm">Date</p>
-            <p className="text-white">{formatDate(sighting.sighting_date)}</p>
-          </div>
-          <div>
-            <p className="text-gray-500 text-sm">Time</p>
-            <p className="text-white">{sighting.sighting_time}</p>
-          </div>
-        </div>
-        {sighting.notes && (
-          <div>
-            <p className="text-gray-500 text-sm">Notes</p>
-            <p className="text-white">{sighting.notes}</p>
-          </div>
-        )}
-      </div>
-    </>
-  );
-};
+function getPhotoUrl(photos) {
+  if (!photos || photos.length === 0) return null;
+  const photo = photos[0];
+  if (photo.startsWith('/api')) {
+    return `${BACKEND_URL}${photo}`;
+  }
+  return photo;
+}
 
 const MySightings = () => {
   const { user, logout, loading, checkAuth } = useAuth();
@@ -218,10 +55,7 @@ const MySightings = () => {
   const [selectedSighting, setSelectedSighting] = useState(null);
 
   useEffect(() => {
-    const verifyAuth = async () => {
-      await checkAuth();
-    };
-    verifyAuth();
+    checkAuth();
   }, [checkAuth]);
 
   useEffect(() => {
@@ -237,12 +71,11 @@ const MySightings = () => {
   }, [user, loading, navigate]);
 
   useEffect(() => {
-    const fetchSightings = async () => {
-      if (!isAuthenticated) return;
+    if (!isAuthenticated) return;
+    
+    async function fetchSightings() {
       try {
-        const response = await fetch(`${API}/sightings`, {
-          credentials: 'include'
-        });
+        const response = await fetch(`${API}/sightings`, { credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
           setSightings(data);
@@ -252,16 +85,17 @@ const MySightings = () => {
       } finally {
         setSightingsLoading(false);
       }
-    };
+    }
+    
     fetchSightings();
   }, [isAuthenticated]);
 
-  const handleLogout = async () => {
+  async function handleLogout() {
     await logout();
     navigate('/');
-  };
+  }
 
-  const handleDelete = async () => {
+  async function handleDelete() {
     if (!deleteId) return;
     setDeleting(true);
     try {
@@ -270,7 +104,7 @@ const MySightings = () => {
         credentials: 'include'
       });
       if (response.ok) {
-        setSightings(prev => prev.filter(s => s.sighting_id !== deleteId));
+        setSightings(sightings.filter(s => s.sighting_id !== deleteId));
       }
     } catch (error) {
       console.error('Failed to delete:', error);
@@ -278,14 +112,18 @@ const MySightings = () => {
       setDeleting(false);
       setDeleteId(null);
     }
-  };
+  }
 
-  const filteredSightings = sightings.filter(s =>
-    s.train_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.operator.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.train_type.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  function filterSightings() {
+    if (!searchTerm) return sightings;
+    const term = searchTerm.toLowerCase();
+    return sightings.filter(s =>
+      s.train_number.toLowerCase().includes(term) ||
+      s.operator.toLowerCase().includes(term) ||
+      s.location.toLowerCase().includes(term) ||
+      s.train_type.toLowerCase().includes(term)
+    );
+  }
 
   if (isAuthenticated === null || loading) {
     return (
@@ -294,6 +132,8 @@ const MySightings = () => {
       </div>
     );
   }
+
+  const filteredSightings = filterSightings();
 
   return (
     <div className="min-h-screen bg-[#0f0f10]">
@@ -310,7 +150,7 @@ const MySightings = () => {
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             {currentUser?.picture ? (
-              <img src={currentUser.picture} alt={currentUser.name} className="w-8 h-8 rounded-full" />
+              <img src={currentUser.picture} alt="" className="w-8 h-8 rounded-full" />
             ) : (
               <div className="w-8 h-8 rounded-full bg-[#e34c26] flex items-center justify-center text-white"><User size={16} /></div>
             )}
@@ -326,7 +166,7 @@ const MySightings = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-white text-3xl font-bold mb-2">My Sightings</h1>
-            <p className="text-gray-400">{sightings.length} train{sightings.length !== 1 ? 's' : ''} spotted</p>
+            <p className="text-gray-400">{sightings.length} trains spotted</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="relative">
@@ -341,13 +181,13 @@ const MySightings = () => {
             <div className="flex border border-gray-700 rounded-lg overflow-hidden">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-2 ${viewMode === 'grid' ? 'bg-orange-500 text-white' : 'bg-[#1a1a1c] text-gray-400 hover:text-white'}`}
+                className={viewMode === 'grid' ? 'p-2 bg-orange-500 text-white' : 'p-2 bg-[#1a1a1c] text-gray-400 hover:text-white'}
               >
                 <Grid size={18} />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-2 ${viewMode === 'list' ? 'bg-orange-500 text-white' : 'bg-[#1a1a1c] text-gray-400 hover:text-white'}`}
+                className={viewMode === 'list' ? 'p-2 bg-orange-500 text-white' : 'p-2 bg-[#1a1a1c] text-gray-400 hover:text-white'}
               >
                 <List size={18} />
               </button>
@@ -383,35 +223,102 @@ const MySightings = () => {
           </div>
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredSightings.map((sighting) => (
-              <SightingCard
-                key={sighting.sighting_id}
-                sighting={sighting}
-                onDelete={setDeleteId}
-                onClick={() => setSelectedSighting(sighting)}
-              />
-            ))}
+            {filteredSightings.map((sighting) => {
+              const photoUrl = getPhotoUrl(sighting.photos);
+              const photoCount = sighting.photos ? sighting.photos.length : 0;
+              return (
+                <div
+                  key={sighting.sighting_id}
+                  className="bg-[#1a1a1c] border border-gray-800 rounded-lg overflow-hidden hover:border-orange-500/30 transition-colors group cursor-pointer"
+                  onClick={() => setSelectedSighting(sighting)}
+                >
+                  <div className="aspect-video bg-gray-800 relative overflow-hidden">
+                    {photoUrl ? (
+                      <img src={photoUrl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Train size={48} className="text-gray-700" />
+                      </div>
+                    )}
+                    {photoCount > 1 && (
+                      <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-xs text-white">
+                        +{photoCount - 1} more
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h3 className="text-white font-semibold text-lg">{sighting.train_number}</h3>
+                        <p className="text-orange-500 text-sm">{sighting.train_type}</p>
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeleteId(sighting.sighting_id); }}
+                        className="text-gray-500 hover:text-red-500 transition-colors p-1"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                    <div className="space-y-1 text-sm text-gray-400">
+                      <p className="flex items-center gap-2"><MapPin size={14} /> {sighting.location}</p>
+                      <p className="flex items-center gap-2"><Calendar size={14} /> {formatDate(sighting.sighting_date)}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredSightings.map((sighting) => (
-              <SightingRow
-                key={sighting.sighting_id}
-                sighting={sighting}
-                onDelete={setDeleteId}
-                onClick={() => setSelectedSighting(sighting)}
-              />
-            ))}
+            {filteredSightings.map((sighting) => {
+              const photoUrl = getPhotoUrl(sighting.photos);
+              return (
+                <div
+                  key={sighting.sighting_id}
+                  className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-4 flex gap-4 hover:border-orange-500/30 transition-colors cursor-pointer"
+                  onClick={() => setSelectedSighting(sighting)}
+                >
+                  <div className="w-24 h-24 rounded-lg bg-gray-800 flex-shrink-0 overflow-hidden">
+                    {photoUrl ? (
+                      <img src={photoUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Train size={32} className="text-gray-700" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="text-white font-semibold">{sighting.train_number}</h3>
+                        <p className="text-orange-500 text-sm">{sighting.train_type} • {sighting.operator}</p>
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeleteId(sighting.sighting_id); }}
+                        className="text-gray-500 hover:text-red-500 transition-colors p-1"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-400">
+                      <span className="flex items-center gap-1"><MapPin size={14} /> {sighting.location}</span>
+                      <span className="flex items-center gap-1"><Calendar size={14} /> {formatDate(sighting.sighting_date)}</span>
+                      <span className="flex items-center gap-1"><Clock size={14} /> {sighting.sighting_time}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </main>
 
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+      <AlertDialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent className="bg-[#1a1a1c] border-gray-800">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white">Delete Sighting?</AlertDialogTitle>
             <AlertDialogDescription className="text-gray-400">
-              This action cannot be undone. This will permanently delete the sighting and all associated photos.
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -424,9 +331,58 @@ const MySightings = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={!!selectedSighting} onOpenChange={() => setSelectedSighting(null)}>
+      <Dialog open={selectedSighting !== null} onOpenChange={() => setSelectedSighting(null)}>
         <DialogContent className="bg-[#1a1a1c] border-gray-800 max-w-2xl max-h-[90vh] overflow-y-auto">
-          {selectedSighting && <SightingDetail sighting={selectedSighting} />}
+          {selectedSighting && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-white text-xl flex items-center gap-2">
+                  <Train size={20} className="text-orange-500" />
+                  {selectedSighting.train_number}
+                </DialogTitle>
+              </DialogHeader>
+
+              {selectedSighting.photos && selectedSighting.photos.length > 0 && (
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  {selectedSighting.photos.map((photo, i) => {
+                    const url = photo.startsWith('/api') ? `${BACKEND_URL}${photo}` : photo;
+                    return <img key={i} src={url} alt="" className="w-full aspect-video object-cover rounded-lg" />;
+                  })}
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-gray-500 text-sm">Train Type</p>
+                    <p className="text-white">{selectedSighting.train_type}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-sm">Operator</p>
+                    <p className="text-white">{selectedSighting.operator}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-gray-500 text-sm">Location</p>
+                    <p className="text-white">{selectedSighting.location}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-sm">Date</p>
+                    <p className="text-white">{formatDate(selectedSighting.sighting_date)}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-sm">Time</p>
+                    <p className="text-white">{selectedSighting.sighting_time}</p>
+                  </div>
+                </div>
+                {selectedSighting.notes && (
+                  <div>
+                    <p className="text-gray-500 text-sm">Notes</p>
+                    <p className="text-white">{selectedSighting.notes}</p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>
