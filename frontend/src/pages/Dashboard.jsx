@@ -1,8 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutGrid, LogOut, Camera, BarChart3, MapPin, Clock, User, Loader2 } from 'lucide-react';
+import { 
+  LayoutGrid, LogOut, Camera, BarChart3, MapPin, Clock, User, Loader2,
+  Plus, Train, Building2, TrendingUp, Calendar
+} from 'lucide-react';
 import { Button } from '../components/ui/button';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
 
 const Dashboard = () => {
   const { user, logout, loading, checkAuth } = useAuth();
@@ -10,16 +16,15 @@ const Dashboard = () => {
   const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(location.state?.user ? true : null);
   const [currentUser, setCurrentUser] = useState(location.state?.user || null);
+  const [stats, setStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
-    // If user data was passed from AuthCallback, use it
     if (location.state?.user) {
       setCurrentUser(location.state.user);
       setIsAuthenticated(true);
       return;
     }
-
-    // Otherwise check auth
     const verifyAuth = async () => {
       await checkAuth();
     };
@@ -38,12 +43,32 @@ const Dashboard = () => {
     }
   }, [user, loading, navigate, location.state]);
 
+  // Fetch stats when authenticated
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!isAuthenticated) return;
+      try {
+        const response = await fetch(`${API}/sightings/stats`, {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setStats(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+    fetchStats();
+  }, [isAuthenticated]);
+
   const handleLogout = async () => {
     await logout();
     navigate('/');
   };
 
-  // Show loading while checking authentication
   if (isAuthenticated === null || loading) {
     return (
       <div className="min-h-screen bg-[#0f0f10] flex items-center justify-center">
@@ -52,70 +77,76 @@ const Dashboard = () => {
     );
   }
 
+  const formatLastSighting = (date) => {
+    if (!date) return 'Never';
+    const d = new Date(date);
+    const now = new Date();
+    const diffDays = Math.floor((now - d) / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return d.toLocaleDateString();
+  };
+
   return (
     <div className="min-h-screen bg-[#0f0f10]">
       {/* Header */}
       <header className="bg-[#FFE500] h-[52px] flex items-center justify-between px-6 md:px-12">
-        <div className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2">
           <div className="text-[#e34c26]">
             <LayoutGrid size={22} strokeWidth={2.5} />
           </div>
           <span className="text-[#e34c26] font-bold text-lg tracking-wider uppercase">
             TrackLog
           </span>
-        </div>
+        </Link>
+        <nav className="flex items-center gap-6">
+          <Link to="/dashboard" className="text-gray-800 font-medium text-sm hover:text-gray-900">Dashboard</Link>
+          <Link to="/sightings" className="text-gray-600 text-sm hover:text-gray-900">My Sightings</Link>
+          <Link to="/log-sighting" className="text-gray-600 text-sm hover:text-gray-900">Log Sighting</Link>
+        </nav>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             {currentUser?.picture ? (
-              <img 
-                src={currentUser.picture} 
-                alt={currentUser.name}
-                className="w-8 h-8 rounded-full"
-              />
+              <img src={currentUser.picture} alt={currentUser.name} className="w-8 h-8 rounded-full" />
             ) : (
               <div className="w-8 h-8 rounded-full bg-[#e34c26] flex items-center justify-center text-white">
                 <User size={16} />
               </div>
             )}
-            <span className="text-gray-800 font-medium text-sm hidden md:block">
-              {currentUser?.name}
-            </span>
+            <span className="text-gray-800 font-medium text-sm hidden md:block">{currentUser?.name}</span>
           </div>
-          <Button
-            onClick={handleLogout}
-            variant="outline"
-            size="sm"
-            className="border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white"
-          >
-            <LogOut size={16} className="mr-1" />
-            Logout
+          <Button onClick={handleLogout} variant="outline" size="sm" className="border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white">
+            <LogOut size={16} className="mr-1" /> Logout
           </Button>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-6 py-12">
-        <div className="mb-8">
-          <h1 className="text-white text-3xl font-bold mb-2">
-            Welcome back, {currentUser?.name?.split(' ')[0]}!
-          </h1>
-          <p className="text-gray-400">
-            Ready to log your next train sighting?
-          </p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-white text-3xl font-bold mb-2">
+              Welcome back, {currentUser?.name?.split(' ')[0]}!
+            </h1>
+            <p className="text-gray-400">Here's an overview of your trainspotting journey.</p>
+          </div>
+          <Link to="/log-sighting">
+            <Button className="bg-[#e34c26] hover:bg-[#d14020] text-white font-semibold">
+              <Plus size={18} className="mr-2" /> Log Sighting
+            </Button>
+          </Link>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
           {[
-            { icon: Camera, label: 'Total Sightings', value: '0' },
-            { icon: BarChart3, label: 'This Month', value: '0' },
-            { icon: MapPin, label: 'Locations', value: '0' },
-            { icon: Clock, label: 'Last Sighting', value: 'Never' }
+            { icon: Camera, label: 'Total Sightings', value: statsLoading ? '...' : (stats?.total_sightings || 0) },
+            { icon: Calendar, label: 'This Month', value: statsLoading ? '...' : (stats?.this_month || 0) },
+            { icon: MapPin, label: 'Locations', value: statsLoading ? '...' : (stats?.unique_locations || 0) },
+            { icon: Clock, label: 'Last Sighting', value: statsLoading ? '...' : formatLastSighting(stats?.last_sighting) }
           ].map((stat, index) => (
-            <div 
-              key={index}
-              className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-6"
-            >
+            <div key={index} className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-6 hover:border-orange-500/30 transition-colors">
               <div className="w-10 h-10 bg-[#2a1a1a] rounded-lg flex items-center justify-center mb-4">
                 <stat.icon size={20} className="text-orange-500" />
               </div>
@@ -125,17 +156,90 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* Quick Actions */}
-        <div className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-8 text-center">
-          <Camera size={48} className="text-orange-500 mx-auto mb-4" />
-          <h2 className="text-white text-xl font-semibold mb-2">Log Your First Sighting</h2>
-          <p className="text-gray-400 mb-6 max-w-md mx-auto">
-            Start building your trainspotting collection by logging your first train sighting.
-          </p>
-          <Button className="bg-[#e34c26] hover:bg-[#d14020] text-white font-semibold px-8 py-6">
-            Add New Sighting
-          </Button>
+        {/* Charts/Analytics Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          {/* Top Train Types */}
+          <div className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Train size={18} className="text-orange-500" />
+              <h3 className="text-white font-semibold">Top Train Types</h3>
+            </div>
+            {statsLoading ? (
+              <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 text-orange-500 animate-spin" /></div>
+            ) : stats?.top_train_types?.length > 0 ? (
+              <div className="space-y-3">
+                {stats.top_train_types.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <span className="text-gray-300 text-sm">{item.name}</span>
+                    <span className="text-orange-500 font-semibold">{item.count}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm text-center py-4">No data yet</p>
+            )}
+          </div>
+
+          {/* Top Operators */}
+          <div className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Building2 size={18} className="text-orange-500" />
+              <h3 className="text-white font-semibold">Top Operators</h3>
+            </div>
+            {statsLoading ? (
+              <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 text-orange-500 animate-spin" /></div>
+            ) : stats?.top_operators?.length > 0 ? (
+              <div className="space-y-3">
+                {stats.top_operators.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <span className="text-gray-300 text-sm">{item.name}</span>
+                    <span className="text-orange-500 font-semibold">{item.count}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm text-center py-4">No data yet</p>
+            )}
+          </div>
+
+          {/* Top Locations */}
+          <div className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <MapPin size={18} className="text-orange-500" />
+              <h3 className="text-white font-semibold">Top Locations</h3>
+            </div>
+            {statsLoading ? (
+              <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 text-orange-500 animate-spin" /></div>
+            ) : stats?.top_locations?.length > 0 ? (
+              <div className="space-y-3">
+                {stats.top_locations.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <span className="text-gray-300 text-sm">{item.name}</span>
+                    <span className="text-orange-500 font-semibold">{item.count}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm text-center py-4">No data yet</p>
+            )}
+          </div>
         </div>
+
+        {/* Quick Actions */}
+        {(!stats || stats.total_sightings === 0) && (
+          <div className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-8 text-center">
+            <Camera size={48} className="text-orange-500 mx-auto mb-4" />
+            <h2 className="text-white text-xl font-semibold mb-2">Log Your First Sighting</h2>
+            <p className="text-gray-400 mb-6 max-w-md mx-auto">
+              Start building your trainspotting collection by logging your first train sighting.
+            </p>
+            <Link to="/log-sighting">
+              <Button className="bg-[#e34c26] hover:bg-[#d14020] text-white font-semibold px-8 py-6">
+                Add New Sighting
+              </Button>
+            </Link>
+          </div>
+        )}
       </main>
     </div>
   );
