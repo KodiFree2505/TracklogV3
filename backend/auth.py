@@ -31,6 +31,14 @@ class UserResponse(BaseModel):
     name: str
     picture: Optional[str] = None
 
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    picture: Optional[str] = None
+
+class PasswordUpdate(BaseModel):
+    current_password: str
+    new_password: str
+
 class SessionRequest(BaseModel):
     session_id: str
 
