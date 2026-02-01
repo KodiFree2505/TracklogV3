@@ -13,24 +13,24 @@ const HeroSection = () => {
         }}
       >
         {/* Dark overlay */}
-        <div className="absolute inset-0 bg-black/50" />
+        <div className="absolute inset-0 bg-black/60" />
       </div>
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-52px)] text-center px-4">
         {/* Tagline */}
-        <p className="text-orange-500 text-xs md:text-sm uppercase tracking-[0.3em] mb-4 font-medium">
+        <p className="text-[#e34c26] text-xs md:text-sm uppercase tracking-[0.3em] mb-6 font-medium">
           The Digital Signal Box
         </p>
 
         {/* Main Headline */}
-        <h1 className="text-white text-5xl md:text-7xl lg:text-8xl font-black uppercase tracking-tight mb-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+        <h1 className="text-white text-5xl md:text-7xl lg:text-[100px] font-black uppercase tracking-tight mb-6 leading-[0.9]" style={{ fontFamily: 'Inter, sans-serif' }}>
           Track Every<br />
-          <span className="text-[#e34c26]">Sighting</span>
+          <span className="text-[#e34c26]" style={{ fontStyle: 'italic' }}>Sighting</span>
         </h1>
 
         {/* Description */}
-        <p className="text-gray-300 text-base md:text-lg max-w-xl mb-8 leading-relaxed">
+        <p className="text-gray-400 text-base md:text-lg max-w-xl mb-10 leading-relaxed">
           A precision tool for the modern rail enthusiast. Log, analyze, and
           explore your trainspotting journey with Swiss-style clarity.
         </p>
