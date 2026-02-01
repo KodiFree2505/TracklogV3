@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the authentication API endpoints for TrackLog app"
+user_problem_statement: "Test the sightings API endpoints for TrackLog app"
 
 backend:
   - task: "User Registration API"
@@ -152,6 +152,66 @@ backend:
       - working: true
         agent: "testing"
         comment: "✅ Logout endpoint working correctly. Successfully logs out users and invalidates session tokens. Session tokens become invalid after logout as expected."
+
+  - task: "Create Sighting API"
+    implemented: true
+    working: true
+    file: "/app/backend/sightings.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ Create sighting endpoint working correctly. Successfully creates new train sightings with all required fields (train_number, train_type, operator, route, location, sighting_date, sighting_time, notes, photos). Returns complete sighting data with generated sighting_id and user_id."
+
+  - task: "Get All Sightings API"
+    implemented: true
+    working: true
+    file: "/app/backend/sightings.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ Get all sightings endpoint working correctly. Successfully retrieves user-specific sightings list. Properly filters by user_id to ensure data isolation between users."
+
+  - task: "Get Sighting Statistics API"
+    implemented: true
+    working: true
+    file: "/app/backend/sightings.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ Get sighting stats endpoint working correctly. Successfully calculates and returns statistics including total_sightings, this_month, unique_locations, unique_trains, and top categories."
+
+  - task: "Get Single Sighting API"
+    implemented: true
+    working: true
+    file: "/app/backend/sightings.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ Get single sighting endpoint working correctly. Successfully retrieves specific sighting by ID with proper user authorization. Returns 404 for non-existent or unauthorized sightings."
+
+  - task: "Delete Sighting API"
+    implemented: true
+    working: true
+    file: "/app/backend/sightings.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ Delete sighting endpoint working correctly. Successfully deletes sightings with proper user authorization. Sighting becomes inaccessible after deletion as verified by 404 response on subsequent GET request."
 
 frontend:
   # No frontend testing performed as per instructions
