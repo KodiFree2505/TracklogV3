@@ -64,7 +64,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchStats = async () => {
-      if (!isAuthenticated) return;
+      if (!currentUser) return;
       try {
         const response = await fetch(`${API}/sightings/stats`, {
           credentials: 'include'
@@ -80,14 +80,14 @@ const Dashboard = () => {
       }
     };
     fetchStats();
-  }, [isAuthenticated]);
+  }, [currentUser]);
 
   const handleLogout = async () => {
     await logout();
     navigate('/');
   };
 
-  if (isAuthenticated === null || loading) {
+  if (loading || !currentUser) {
     return (
       <div className="min-h-screen bg-[#0f0f10] flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-[#e34c26] animate-spin" />
