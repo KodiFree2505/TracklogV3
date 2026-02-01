@@ -37,17 +37,21 @@ const HeroSection = () => {
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4">
-          <Button 
-            className="bg-[#e34c26] hover:bg-[#d14020] text-white font-semibold text-sm uppercase tracking-wider px-8 py-6 rounded"
-          >
-            Start Logging
-          </Button>
-          <Button 
-            variant="outline"
-            className="border-2 border-white text-white hover:bg-white hover:text-black font-semibold text-sm uppercase tracking-wider px-8 py-6 rounded bg-transparent"
-          >
-            Sign In
-          </Button>
+          <a href="/auth?signup=true">
+            <Button 
+              className="bg-[#e34c26] hover:bg-[#d14020] text-white font-semibold text-sm uppercase tracking-wider px-8 py-6 rounded"
+            >
+              Start Logging
+            </Button>
+          </a>
+          <a href="/auth">
+            <Button 
+              variant="outline"
+              className="border-2 border-white text-white hover:bg-white hover:text-black font-semibold text-sm uppercase tracking-wider px-8 py-6 rounded bg-transparent"
+            >
+              Sign In
+            </Button>
+          </a>
         </div>
       </div>
     </section>
