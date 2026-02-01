@@ -109,6 +109,7 @@ async def create_sighting(sighting_data: SightingCreate, request: Request):
         "user_id": user_id,
         "train_number": sighting_data.train_number,
         "train_type": sighting_data.train_type,
+        "traction_type": sighting_data.traction_type,
         "operator": sighting_data.operator,
         "route": sighting_data.route,
         "location": sighting_data.location,
