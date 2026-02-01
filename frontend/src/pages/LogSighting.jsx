@@ -28,10 +28,8 @@ const TRAIN_TYPES = [
 ];
 
 const LogSighting = () => {
-  const { user, logout, loading, checkAuth } = useAuth();
+  const { user, logout, loading } = useAuth();
   const navigate = useNavigate();
-  const [currentUser, setCurrentUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -51,23 +49,10 @@ const LogSighting = () => {
   const [photos, setPhotos] = useState([]);
 
   useEffect(() => {
-    const verifyAuth = async () => {
-      await checkAuth();
-    };
-    verifyAuth();
-  }, [checkAuth]);
-
-  useEffect(() => {
-    if (!loading) {
-      if (user) {
-        setCurrentUser(user);
-        setIsAuthenticated(true);
-      } else {
-        setIsAuthenticated(false);
-        navigate('/auth');
-      }
+    if (!loading && !user) {
+      navigate('/auth');
     }
-  }, [user, loading, navigate]);
+  }, [loading, user, navigate]);
 
   const handleLogout = async () => {
     await logout();
