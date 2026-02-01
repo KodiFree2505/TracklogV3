@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   LayoutGrid, LogOut, User, Loader2, Camera, X, Upload, Train,
-  Building2, MapPin, Calendar, Clock, FileText, CheckCircle
+  MapPin, FileText, CheckCircle
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -37,17 +37,18 @@ const LogSighting = () => {
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
 
-  const [formData, setFormData] = useState({
-    train_number: '',
-    train_type: '',
-    operator: '',
-    route: '',
-    location: '',
-    sighting_date: new Date().toISOString().split('T')[0],
-    sighting_time: new Date().toTimeString().slice(0, 5),
-    notes: '',
-    photos: []
-  });
+  const today = new Date().toISOString().split('T')[0];
+  const nowTime = new Date().toTimeString().slice(0, 5);
+
+  const [trainNumber, setTrainNumber] = useState('');
+  const [trainType, setTrainType] = useState('');
+  const [operator, setOperator] = useState('');
+  const [route, setRoute] = useState('');
+  const [location, setLocation] = useState('');
+  const [sightingDate, setSightingDate] = useState(today);
+  const [sightingTime, setSightingTime] = useState(nowTime);
+  const [notes, setNotes] = useState('');
+  const [photos, setPhotos] = useState([]);
 
   useEffect(() => {
     const verifyAuth = async () => {
@@ -73,47 +74,42 @@ const LogSighting = () => {
     navigate('/');
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    setError('');
-  };
-
-  const handleSelectChange = (name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-    setError('');
-  };
-
   const handlePhotoSelect = (e) => {
     const files = Array.from(e.target.files);
-    if (files.length + formData.photos.length > 5) {
+    if (files.length + photos.length > 5) {
       setError('Maximum 5 photos allowed');
       return;
     }
 
     files.forEach(file => {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setFormData(prev => ({
-          ...prev,
-          photos: [...prev.photos, e.target.result]
-        }));
+      reader.onload = (event) => {
+        setPhotos(prev => [...prev, event.target.result]);
       };
       reader.readAsDataURL(file);
     });
   };
 
   const removePhoto = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      photos: prev.photos.filter((_, i) => i !== index)
-    }));
+    setPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     setError('');
+
+    const formData = {
+      train_number: trainNumber,
+      train_type: trainType,
+      operator: operator,
+      route: route,
+      location: location,
+      sighting_date: sightingDate,
+      sighting_time: sightingTime,
+      notes: notes,
+      photos: photos
+    };
 
     try {
       const response = await fetch(`${API}/sightings`, {
@@ -161,7 +157,6 @@ const LogSighting = () => {
 
   return (
     <div className="min-h-screen bg-[#0f0f10]">
-      {/* Header */}
       <header className="bg-[#FFE500] h-[52px] flex items-center justify-between px-6 md:px-12">
         <Link to="/" className="flex items-center gap-2">
           <div className="text-[#e34c26]"><LayoutGrid size={22} strokeWidth={2.5} /></div>
@@ -187,7 +182,6 @@ const LogSighting = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-3xl mx-auto px-6 py-12">
         <div className="mb-8">
           <h1 className="text-white text-3xl font-bold mb-2">Log New Sighting</h1>
@@ -195,7 +189,6 @@ const LogSighting = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Train Details */}
           <div className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-6">
             <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
               <Train size={18} className="text-orange-500" /> Train Details
@@ -204,9 +197,8 @@ const LogSighting = () => {
               <div>
                 <Label className="text-gray-300 text-sm">Train Number *</Label>
                 <Input
-                  name="train_number"
-                  value={formData.train_number}
-                  onChange={handleInputChange}
+                  value={trainNumber}
+                  onChange={(e) => setTrainNumber(e.target.value)}
                   placeholder="e.g., 66057, ICE 123"
                   className="mt-1 bg-[#0f0f10] border-gray-700 text-white"
                   required
@@ -214,7 +206,7 @@ const LogSighting = () => {
               </div>
               <div>
                 <Label className="text-gray-300 text-sm">Train Type *</Label>
-                <Select onValueChange={(v) => handleSelectChange('train_type', v)} value={formData.train_type}>
+                <Select onValueChange={setTrainType} value={trainType}>
                   <SelectTrigger className="mt-1 bg-[#0f0f10] border-gray-700 text-white">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
@@ -228,9 +220,8 @@ const LogSighting = () => {
               <div>
                 <Label className="text-gray-300 text-sm">Operator *</Label>
                 <Input
-                  name="operator"
-                  value={formData.operator}
-                  onChange={handleInputChange}
+                  value={operator}
+                  onChange={(e) => setOperator(e.target.value)}
                   placeholder="e.g., DB, SNCF, Amtrak"
                   className="mt-1 bg-[#0f0f10] border-gray-700 text-white"
                   required
@@ -239,9 +230,8 @@ const LogSighting = () => {
               <div>
                 <Label className="text-gray-300 text-sm">Route</Label>
                 <Input
-                  name="route"
-                  value={formData.route}
-                  onChange={handleInputChange}
+                  value={route}
+                  onChange={(e) => setRoute(e.target.value)}
                   placeholder="e.g., London - Edinburgh"
                   className="mt-1 bg-[#0f0f10] border-gray-700 text-white"
                 />
@@ -249,7 +239,6 @@ const LogSighting = () => {
             </div>
           </div>
 
-          {/* Location & Time */}
           <div className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-6">
             <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
               <MapPin size={18} className="text-orange-500" /> Location & Time
@@ -258,9 +247,8 @@ const LogSighting = () => {
               <div className="md:col-span-3">
                 <Label className="text-gray-300 text-sm">Location *</Label>
                 <Input
-                  name="location"
-                  value={formData.location}
-                  onChange={handleInputChange}
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
                   placeholder="e.g., King's Cross Station, Platform 9"
                   className="mt-1 bg-[#0f0f10] border-gray-700 text-white"
                   required
@@ -270,9 +258,8 @@ const LogSighting = () => {
                 <Label className="text-gray-300 text-sm">Date *</Label>
                 <Input
                   type="date"
-                  name="sighting_date"
-                  value={formData.sighting_date}
-                  onChange={handleInputChange}
+                  value={sightingDate}
+                  onChange={(e) => setSightingDate(e.target.value)}
                   className="mt-1 bg-[#0f0f10] border-gray-700 text-white"
                   required
                 />
@@ -281,9 +268,8 @@ const LogSighting = () => {
                 <Label className="text-gray-300 text-sm">Time *</Label>
                 <Input
                   type="time"
-                  name="sighting_time"
-                  value={formData.sighting_time}
-                  onChange={handleInputChange}
+                  value={sightingTime}
+                  onChange={(e) => setSightingTime(e.target.value)}
                   className="mt-1 bg-[#0f0f10] border-gray-700 text-white"
                   required
                 />
@@ -291,13 +277,12 @@ const LogSighting = () => {
             </div>
           </div>
 
-          {/* Photos */}
           <div className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-6">
             <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
               <Camera size={18} className="text-orange-500" /> Photos
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
-              {formData.photos.map((photo, index) => (
+              {photos.map((photo, index) => (
                 <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-800">
                   <img src={photo} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
                   <button
@@ -309,7 +294,7 @@ const LogSighting = () => {
                   </button>
                 </div>
               ))}
-              {formData.photos.length < 5 && (
+              {photos.length < 5 && (
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
@@ -331,15 +316,13 @@ const LogSighting = () => {
             <p className="text-gray-500 text-xs">Up to 5 photos. JPG, PNG supported.</p>
           </div>
 
-          {/* Notes */}
           <div className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-6">
             <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
               <FileText size={18} className="text-orange-500" /> Notes
             </h3>
             <Textarea
-              name="notes"
-              value={formData.notes}
-              onChange={handleInputChange}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
               placeholder="Any additional observations..."
               className="bg-[#0f0f10] border-gray-700 text-white min-h-[100px]"
             />
@@ -363,7 +346,7 @@ const LogSighting = () => {
               disabled={submitting}
               className="flex-1 bg-[#e34c26] hover:bg-[#d14020] text-white font-semibold"
             >
-              {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              {submitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
               {submitting ? 'Saving...' : 'Log Sighting'}
             </Button>
           </div>
