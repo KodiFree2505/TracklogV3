@@ -57,7 +57,7 @@ const MobileNav = ({ user, onLogout }) => (
       <div className="flex flex-col gap-6 mt-8">
         <div className="flex items-center gap-3 pb-4 border-b border-gray-800">
           {user?.picture ? (
-            <img src={user.picture} alt="" className="w-10 h-10 rounded-full" />
+            <img src={user.picture.startsWith('/api') ? `${BACKEND_URL}${user.picture}` : user.picture} alt="" className="w-10 h-10 rounded-full object-cover" />
           ) : (
             <div className="w-10 h-10 rounded-full bg-[#e34c26] flex items-center justify-center text-white">
               <User size={20} />
@@ -68,6 +68,7 @@ const MobileNav = ({ user, onLogout }) => (
         <Link to="/dashboard" className="text-white font-medium py-2">Dashboard</Link>
         <Link to="/sightings" className="text-gray-300 hover:text-white py-2">My Sightings</Link>
         <Link to="/log-sighting" className="text-gray-300 hover:text-white py-2">Log Sighting</Link>
+        <Link to="/profile" className="text-gray-300 hover:text-white py-2">Profile</Link>
         <button onClick={onLogout} className="text-red-400 hover:text-red-300 py-2 text-left mt-4">
           <LogOut size={18} className="inline mr-2" /> Logout
         </button>
