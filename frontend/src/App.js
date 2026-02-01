@@ -8,6 +8,7 @@ import AuthCallback from "./pages/AuthCallback";
 import Dashboard from "./pages/Dashboard";
 import LogSighting from "./pages/LogSighting";
 import MySightings from "./pages/MySightings";
+import ProfilePage from "./pages/ProfilePage";
 
 // Router component that checks for session_id in URL hash
 function AppRouter() {
@@ -26,6 +27,7 @@ function AppRouter() {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/log-sighting" element={<LogSighting />} />
       <Route path="/sightings" element={<MySightings />} />
+      <Route path="/profile" element={<ProfilePage />} />
     </Routes>
   );
 }
