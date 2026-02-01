@@ -279,3 +279,104 @@ async def logout(request: Request, response: Response):
     clear_session_cookie(response)
     
     return {"message": "Logged out successfully"}
+
+
+@auth_router.put("/profile", response_model=UserResponse)
+async def update_profile(user_data: UserUpdate, request: Request):
+    """Update user profile (name, picture)"""
+    user = await get_current_user(request)
+    user_id = user["user_id"]
+    
+    update_fields = {}
+    if user_data.name is not None:
+        update_fields["name"] = user_data.name
+    if user_data.picture is not None:
+        # Handle base64 image upload
+        if user_data.picture.startswith("data:image"):
+            import base64
+            import os
+            try:
+                header, data = user_data.picture.split(",", 1)
+                ext = "jpg" if "jpeg" in header else "png"
+                filename = f"profile_{user_id}.{ext}"
+                filepath = f"/app/backend/uploads/{filename}"
+                
+                os.makedirs("/app/backend/uploads", exist_ok=True)
+                
+                with open(filepath, "wb") as f:
+                    f.write(base64.b64decode(data))
+                
+                update_fields["picture"] = f"/api/uploads/{filename}"
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Failed to save image: {str(e)}")
+        else:
+            update_fields["picture"] = user_data.picture
+    
+    if update_fields:
+        await db.users.update_one(
+            {"user_id": user_id},
+            {"$set": update_fields}
+        )
+    
+    # Get updated user
+    updated_user = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password_hash": 0})
+    
+    return UserResponse(
+        user_id=updated_user["user_id"],
+        email=updated_user["email"],
+        name=updated_user["name"],
+        picture=updated_user.get("picture")
+    )
+
+@auth_router.put("/password")
+async def update_password(password_data: PasswordUpdate, request: Request):
+    """Update user password"""
+    user = await get_current_user(request)
+    user_id = user["user_id"]
+    
+    # Get full user doc with password
+    user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+    
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check if user uses Google auth
+    if user_doc.get("auth_provider") == "google":
+        raise HTTPException(status_code=400, detail="Cannot change password for Google accounts")
+    
+    # Verify current password
+    if not user_doc.get("password_hash"):
+        raise HTTPException(status_code=400, detail="No password set for this account")
+    
+    if not verify_password(password_data.current_password, user_doc["password_hash"]):
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+    
+    # Update password
+    new_hash = hash_password(password_data.new_password)
+    await db.users.update_one(
+        {"user_id": user_id},
+        {"$set": {"password_hash": new_hash}}
+    )
+    
+    return {"message": "Password updated successfully"}
+
+@auth_router.delete("/account")
+async def delete_account(request: Request, response: Response):
+    """Delete user account and all associated data"""
+    user = await get_current_user(request)
+    user_id = user["user_id"]
+    
+    # Delete all user sessions
+    await db.user_sessions.delete_many({"user_id": user_id})
+    
+    # Delete all user sightings
+    await db.sightings.delete_many({"user_id": user_id})
+    
+    # Delete user
+    await db.users.delete_one({"user_id": user_id})
+    
+    # Clear cookie
+    clear_session_cookie(response)
+    
+    return {"message": "Account deleted successfully"}
+
