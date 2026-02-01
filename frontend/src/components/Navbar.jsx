@@ -6,7 +6,7 @@ const Navbar = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50">
       {/* Yellow top bar */}
-      <div className="bg-[#FFE500] h-[52px] flex items-center justify-between px-6 md:px-12 lg:px-24">
+      <div className="bg-[#FFE500] h-[52px] flex items-center justify-between px-4 md:px-12 lg:px-24">
         {/* Logo */}
         <div className="flex items-center gap-2">
           <div className="text-[#e34c26]">
@@ -18,7 +18,7 @@ const Navbar = () => {
         </div>
 
         {/* Navigation Links */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3 md:gap-6">
           <a 
             href="/auth" 
             className="text-gray-800 hover:text-gray-900 font-medium text-sm transition-colors"
@@ -27,9 +27,10 @@ const Navbar = () => {
           </a>
           <a href="/auth?signup=true">
             <Button 
-              className="bg-[#e34c26] hover:bg-[#d14020] text-white font-semibold text-xs uppercase tracking-wider px-6 py-2 h-9 rounded"
+              className="bg-[#e34c26] hover:bg-[#d14020] text-white font-semibold text-xs uppercase tracking-wider px-4 md:px-6 py-2 h-9 rounded"
             >
-              Get Started
+              <span className="hidden sm:inline">Get Started</span>
+              <span className="sm:hidden">Start</span>
             </Button>
           </a>
         </div>
