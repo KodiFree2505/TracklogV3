@@ -80,8 +80,8 @@ const MySightings = () => {
           <Link to="/log-sighting" className="text-gray-600 text-sm">Log Sighting</Link>
         </nav>
         <div className="flex items-center gap-4">
-          {currentUser?.picture ? <img src={currentUser.picture} alt="" className="w-8 h-8 rounded-full" /> : <div className="w-8 h-8 rounded-full bg-[#e34c26] flex items-center justify-center text-white"><User size={16} /></div>}
-          <span className="text-gray-800 font-medium text-sm hidden md:block">{currentUser?.name}</span>
+          {user?.picture ? <img src={user.picture} alt="" className="w-8 h-8 rounded-full" /> : <div className="w-8 h-8 rounded-full bg-[#e34c26] flex items-center justify-center text-white"><User size={16} /></div>}
+          <span className="text-gray-800 font-medium text-sm hidden md:block">{user?.name}</span>
           <Button onClick={handleLogout} variant="outline" size="sm" className="border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white"><LogOut size={16} /></Button>
         </div>
       </header>
