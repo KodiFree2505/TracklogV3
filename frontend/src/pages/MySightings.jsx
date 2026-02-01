@@ -22,10 +22,8 @@ function getPhotoUrl(photo) {
 }
 
 const MySightings = () => {
-  const { user, logout, loading, checkAuth } = useAuth();
+  const { user, logout, loading } = useAuth();
   const navigate = useNavigate();
-  const [currentUser, setCurrentUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(null);
   const [sightings, setSightings] = useState([]);
   const [sightingsLoading, setSightingsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -34,23 +32,20 @@ const MySightings = () => {
   const [deleting, setDeleting] = useState(false);
   const [selectedSighting, setSelectedSighting] = useState(null);
 
-  useEffect(() => { checkAuth(); }, [checkAuth]);
-
   useEffect(() => {
-    if (!loading) {
-      if (user) { setCurrentUser(user); setIsAuthenticated(true); }
-      else { setIsAuthenticated(false); navigate('/auth'); }
+    if (!loading && !user) {
+      navigate('/auth');
     }
-  }, [user, loading, navigate]);
+  }, [loading, user, navigate]);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!user) return;
     fetch(`${API}/sightings`, { credentials: 'include' })
       .then(res => res.ok ? res.json() : [])
       .then(data => setSightings(data))
       .catch(() => {})
       .finally(() => setSightingsLoading(false));
-  }, [isAuthenticated]);
+  }, [user]);
 
   const handleLogout = () => { logout().then(() => navigate('/')); };
 
