@@ -200,14 +200,14 @@ const LogSighting = () => {
         </nav>
         
         <div className="flex items-center gap-2 md:gap-4">
-          <div className="hidden md:flex items-center gap-2">
+          <Link to="/profile" className="hidden md:flex items-center gap-2 hover:opacity-80 transition-opacity">
             {user?.picture ? (
-              <img src={user.picture} alt={user.name} className="w-8 h-8 rounded-full" />
+              <img src={user.picture.startsWith('/api') ? `${BACKEND_URL}${user.picture}` : user.picture} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
             ) : (
               <div className="w-8 h-8 rounded-full bg-[#e34c26] flex items-center justify-center text-white"><User size={16} /></div>
             )}
             <span className="text-gray-800 font-medium text-sm">{user?.name}</span>
-          </div>
+          </Link>
           <Button onClick={handleLogout} variant="outline" size="sm" className="hidden md:flex border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white">
             <LogOut size={16} className="mr-1" /> Logout
           </Button>
