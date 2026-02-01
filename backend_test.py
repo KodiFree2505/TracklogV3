@@ -24,7 +24,7 @@ def get_backend_url():
 BASE_URL = get_backend_url()
 API_BASE = f"{BASE_URL}/api"
 
-class AuthTester:
+class TrackLogTester:
     def __init__(self):
         self.session = requests.Session()
         self.test_results = []
@@ -32,6 +32,7 @@ class AuthTester:
         self.test_user_email = f"testuser.{int(datetime.now().timestamp())}@tracklog.com"
         self.test_user_password = "SecurePass123!"
         self.test_user_name = "Test User"
+        self.created_sighting_id = None
         
     def log_result(self, test_name, success, message, response=None):
         """Log test result"""
