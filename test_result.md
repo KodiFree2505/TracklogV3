@@ -219,12 +219,12 @@ frontend:
 metadata:
   created_by: "testing_agent"
   version: "1.0"
-  test_sequence: 1
+  test_sequence: 2
   run_ui: false
 
 test_plan:
   current_focus:
-    - "Authentication API Testing Complete"
+    - "Sightings API Testing Complete"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -232,3 +232,5 @@ test_plan:
 agent_communication:
   - agent: "testing"
     message: "✅ All authentication API endpoints tested successfully. All 9 test cases passed with 100% success rate. Registration, login, get current user, and logout endpoints are working correctly. Session management is functioning properly with proper token validation and invalidation. No critical issues found."
+  - agent: "testing"
+    message: "✅ All sightings API endpoints tested successfully. All 16 test cases passed with 100% success rate. Create, read, update, delete, and statistics endpoints are working correctly. Authentication is properly enforced on all sightings endpoints. User data isolation is working as expected. No critical issues found."
