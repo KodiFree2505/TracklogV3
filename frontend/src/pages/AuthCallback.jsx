@@ -17,25 +17,22 @@ const AuthCallback = () => {
     const processSession = async () => {
       try {
         // Extract session_id from URL hash
-        const hash = location.hash;
+        const hash = location.hash || '';
         const sessionIdMatch = hash.match(/session_id=([^&]+)/);
-        
+
         if (!sessionIdMatch) {
           console.error('No session_id found in URL');
           navigate('/auth', { replace: true });
           return;
         }
 
-        const sessionId = sessionIdMatch[1];
-        
-        // Exchange session_id for session_token
+        const sessionId = decodeURIComponent(sessionIdMatch[1]);
+
+        // Exchange session_id for session_token and get user data
         const userData = await exchangeSession(sessionId);
-        
-        // Navigate to dashboard with user data
-        navigate('/dashboard', { 
-          replace: true,
-          state: { user: userData }
-        });
+
+        // Navigate to dashboard
+        navigate('/dashboard', { replace: true, state: { user: userData } });
       } catch (error) {
         console.error('Auth callback error:', error);
         navigate('/auth', { replace: true });
