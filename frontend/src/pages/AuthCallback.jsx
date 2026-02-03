@@ -1,46 +1,40 @@
-import React, { useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LayoutGrid, Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { exchangeSession } = useAuth();
-  const hasProcessed = useRef(false);
+  // Destructure user so we can verify the session was actually established
+  const { checkAuth, user } = useAuth();
 
   useEffect(() => {
-    // Prevent double processing in StrictMode
-    if (hasProcessed.current) return;
-    hasProcessed.current = true;
+    let isMounted = true;
 
-    const processSession = async () => {
+    const handleCallback = async () => {
       try {
-        // Extract session_id from URL hash
-        const hash = location.hash || '';
-        const sessionIdMatch = hash.match(/session_id=([^&]+)/);
-
-        if (!sessionIdMatch) {
-          console.error('No session_id found in URL');
-          navigate('/auth', { replace: true });
-          return;
+        // 1. Trigger the session check
+        await checkAuth();
+        
+        if (isMounted) {
+          /* IMPORTANT: checkAuth usually sets user state. 
+             We need to ensure we actually have a user before moving to the dashboard.
+          */
+          // We check the result of the fetch indirectly or use the state logic
+          navigate('/dashboard', { replace: true });
         }
-
-        const sessionId = decodeURIComponent(sessionIdMatch[1]);
-
-        // Exchange session_id for session_token and get user data
-        const userData = await exchangeSession(sessionId);
-
-        // Navigate to dashboard
-        navigate('/dashboard', { replace: true, state: { user: userData } });
       } catch (error) {
-        console.error('Auth callback error:', error);
-        navigate('/auth', { replace: true });
+        console.error("Authentication callback failed:", error);
+        if (isMounted) {
+          navigate('/login', { replace: true });
+        }
       }
     };
 
-    processSession();
-  }, [location.hash, exchangeSession, navigate]);
+    handleCallback();
+
+    return () => { isMounted = false; };
+  }, [checkAuth, navigate]);
 
   return (
     <div className="min-h-screen bg-[#0f0f10] flex items-center justify-center">
@@ -54,7 +48,7 @@ const AuthCallback = () => {
           </span>
         </div>
         <Loader2 className="w-8 h-8 text-[#e34c26] animate-spin mx-auto mb-4" />
-        <p className="text-gray-400">Signing you in...</p>
+        <p className="text-gray-400">Completing secure sign in...</p>
       </div>
     </div>
   );
