@@ -1,140 +1,175 @@
-from fastapi import APIRouter, HTTPException, Request, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime, timezone
 import uuid
 import os
-import shutil
+import base64
 
 sightings_router = APIRouter(prefix="/sightings", tags=["sightings"])
 
-# Database injected externally
 db = None
 
 def set_db(database):
     global db
     db = database
 
+# Models
+class SightingCreate(BaseModel):
+    train_number: str
+    train_type: str
+    traction_type: str
+    operator: str
+    route: Optional[str] = None
+    location: str
+    sighting_date: str
+    sighting_time: str
+    notes: Optional[str] = None
+    photos: List[str] = []
 
-# ---------------------------
-# Auth helper
-# ---------------------------
+class SightingResponse(BaseModel):
+    sighting_id: str
+    user_id: str
+    train_number: str
+    train_type: str
+    traction_type: Optional[str] = None
+    operator: str
+    route: Optional[str] = None
+    location: str
+    sighting_date: str
+    sighting_time: str
+    notes: Optional[str] = None
+    photos: List[str] = []
+    created_at: datetime
+
+class SightingStats(BaseModel):
+    total_sightings: int
+    this_month: int
+    unique_locations: int
+    unique_trains: int
+    last_sighting: Optional[datetime] = None
+    top_train_types: List[dict] = []
+    top_operators: List[dict] = []
+    top_locations: List[dict] = []
+
 async def get_current_user_id(request: Request) -> str:
     from auth import get_current_user
     user = await get_current_user(request)
     return user["user_id"]
 
-
-# ---------------------------
-# CREATE SIGHTING (MULTIPART)
-# ---------------------------
-@sightings_router.post("")
-async def create_sighting(
-    request: Request,
-    train_number: str = Form(...),
-    train_type: str = Form(...),
-    traction_type: str = Form(...),
-    operator: str = Form(...),
-    location: str = Form(...),
-    sighting_date: str = Form(...),
-    sighting_time: str = Form(...),
-    route: Optional[str] = Form(None),
-    notes: Optional[str] = Form(None),
-    photos: Optional[List[UploadFile]] = File(None),
-):
-    """
-    Create a new train sighting (Emergent-safe)
-    """
+@sightings_router.post("", response_model=SightingResponse)
+async def create_sighting(sighting_data: SightingCreate, request: Request):
     user_id = await get_current_user_id(request)
     sighting_id = f"sighting_{uuid.uuid4().hex[:12]}"
-
+    
     upload_dir = "/app/backend/uploads"
     os.makedirs(upload_dir, exist_ok=True)
-
-    saved_photos: List[str] = []
-
-    if photos:
-        for idx, photo in enumerate(photos):
-            if not photo.content_type.startswith("image/"):
-                continue
-
-            ext = photo.filename.split(".")[-1].lower()
-            filename = f"{sighting_id}_{idx}.{ext}"
-            filepath = os.path.join(upload_dir, filename)
-
-            with open(filepath, "wb") as buffer:
-                shutil.copyfileobj(photo.file, buffer)
-
-            saved_photos.append(f"/api/uploads/{filename}")
-
+    
+    saved_photos = []
+    for i, photo in enumerate(sighting_data.photos):
+        if photo.startswith("data:image"):
+            try:
+                header, data = photo.split(",", 1)
+                ext = "jpg" if "jpeg" in header else "png"
+                filename = f"{sighting_id}_{i}.{ext}"
+                filepath = os.path.join(upload_dir, filename)
+                with open(filepath, "wb") as f:
+                    f.write(base64.b64decode(data))
+                saved_photos.append(f"/api/uploads/{filename}")
+            except Exception as e:
+                print(f"Error saving photo: {e}")
+        elif photo:
+            saved_photos.append(photo)
+    
     sighting_doc = {
         "sighting_id": sighting_id,
         "user_id": user_id,
-        "train_number": train_number,
-        "train_type": train_type,
-        "traction_type": traction_type,
-        "operator": operator,
-        "route": route,
-        "location": location,
-        "sighting_date": sighting_date,
-        "sighting_time": sighting_time,
-        "notes": notes,
+        "train_number": sighting_data.train_number,
+        "train_type": sighting_data.train_type,
+        "traction_type": sighting_data.traction_type,
+        "operator": sighting_data.operator,
+        "route": sighting_data.route,
+        "location": sighting_data.location,
+        "sighting_date": sighting_data.sighting_date,
+        "sighting_time": sighting_data.sighting_time,
+        "notes": sighting_data.notes,
         "photos": saved_photos,
-        "created_at": datetime.now(timezone.utc),
+        "created_at": datetime.now(timezone.utc)
     }
-
+    
     await db.sightings.insert_one(sighting_doc)
+    return SightingResponse(**sighting_doc)
 
-    return sighting_doc
-
-
-# ---------------------------
-# GET USER SIGHTINGS
-# ---------------------------
-@sightings_router.get("")
+@sightings_router.get("", response_model=List[SightingResponse])
 async def get_sightings(request: Request, limit: int = 100, skip: int = 0):
     user_id = await get_current_user_id(request)
-
     sightings = await db.sightings.find(
-        {"user_id": user_id},
-        {"_id": 0},
+        {"user_id": user_id}, {"_id": 0}
     ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    return [SightingResponse(**s) for s in sightings]
 
-    return sightings
-
-
-# ---------------------------
-# GET SINGLE SIGHTING
-# ---------------------------
-@sightings_router.get("/{sighting_id}")
-async def get_sighting(sighting_id: str, request: Request):
+@sightings_router.get("/stats", response_model=SightingStats)
+async def get_sighting_stats(request: Request):
     user_id = await get_current_user_id(request)
-
-    sighting = await db.sightings.find_one(
-        {"sighting_id": sighting_id, "user_id": user_id},
-        {"_id": 0},
+    sightings = await db.sightings.find({"user_id": user_id}, {"_id": 0}).to_list(1000)
+    
+    if not sightings:
+        return SightingStats(
+            total_sightings=0, this_month=0, unique_locations=0,
+            unique_trains=0, last_sighting=None,
+            top_train_types=[], top_operators=[], top_locations=[]
+        )
+    
+    total = len(sightings)
+    now = datetime.now(timezone.utc)
+    current_month = now.strftime("%Y-%m")
+    this_month = sum(1 for s in sightings if s["sighting_date"].startswith(current_month))
+    unique_locations = len(set(s["location"] for s in sightings))
+    unique_trains = len(set(s["train_number"] for s in sightings))
+    last_sighting = max(s["created_at"] for s in sightings) if sightings else None
+    
+    train_type_counts = {}
+    operator_counts = {}
+    location_counts = {}
+    
+    for s in sightings:
+        t = s["train_type"]
+        train_type_counts[t] = train_type_counts.get(t, 0) + 1
+        o = s["operator"]
+        operator_counts[o] = operator_counts.get(o, 0) + 1
+        loc = s["location"]
+        location_counts[loc] = location_counts.get(loc, 0) + 1
+    
+    top_train_types = [{"name": k, "count": v} for k, v in sorted(train_type_counts.items(), key=lambda x: -x[1])[:5]]
+    top_operators = [{"name": k, "count": v} for k, v in sorted(operator_counts.items(), key=lambda x: -x[1])[:5]]
+    top_locations = [{"name": k, "count": v} for k, v in sorted(location_counts.items(), key=lambda x: -x[1])[:5]]
+    
+    return SightingStats(
+        total_sightings=total, this_month=this_month,
+        unique_locations=unique_locations, unique_trains=unique_trains,
+        last_sighting=last_sighting,
+        top_train_types=top_train_types, top_operators=top_operators, top_locations=top_locations
     )
 
+@sightings_router.get("/{sighting_id}", response_model=SightingResponse)
+async def get_sighting(sighting_id: str, request: Request):
+    user_id = await get_current_user_id(request)
+    sighting = await db.sightings.find_one(
+        {"sighting_id": sighting_id, "user_id": user_id}, {"_id": 0}
+    )
     if not sighting:
         raise HTTPException(status_code=404, detail="Sighting not found")
+    return SightingResponse(**sighting)
 
-    return sighting
-
-
-# ---------------------------
-# DELETE SIGHTING
-# ---------------------------
 @sightings_router.delete("/{sighting_id}")
 async def delete_sighting(sighting_id: str, request: Request):
     user_id = await get_current_user_id(request)
-
     sighting = await db.sightings.find_one(
-        {"sighting_id": sighting_id, "user_id": user_id},
-        {"_id": 0},
+        {"sighting_id": sighting_id, "user_id": user_id}, {"_id": 0}
     )
-
     if not sighting:
         raise HTTPException(status_code=404, detail="Sighting not found")
-
+    
     for photo in sighting.get("photos", []):
         if photo.startswith("/api/uploads/"):
             filename = photo.replace("/api/uploads/", "")
@@ -142,57 +177,8 @@ async def delete_sighting(sighting_id: str, request: Request):
             if os.path.exists(filepath):
                 try:
                     os.remove(filepath)
-                except Exception:
+                except:
                     pass
-
+    
     await db.sightings.delete_one({"sighting_id": sighting_id, "user_id": user_id})
-
     return {"message": "Sighting deleted successfully"}
-
-
-# ---------------------------
-# STATS (SAFE, NO BODY)
-# ---------------------------
-@sightings_router.get("/stats")
-async def get_sighting_stats(request: Request):
-    user_id = await get_current_user_id(request)
-
-    sightings = await db.sightings.find(
-        {"user_id": user_id},
-        {"_id": 0},
-    ).to_list(1000)
-
-    if not sightings:
-        return {
-            "total_sightings": 0,
-            "this_month": 0,
-            "unique_locations": 0,
-            "unique_trains": 0,
-            "last_sighting": None,
-            "top_train_types": [],
-            "top_operators": [],
-            "top_locations": [],
-        }
-
-    now = datetime.now(timezone.utc)
-    current_month = now.strftime("%Y-%m")
-
-    return {
-        "total_sightings": len(sightings),
-        "this_month": sum(1 for s in sightings if s["sighting_date"].startswith(current_month)),
-        "unique_locations": len({s["location"] for s in sightings}),
-        "unique_trains": len({s["train_number"] for s in sightings}),
-        "last_sighting": max(s["created_at"] for s in sightings),
-        "top_train_types": _top_counts(sightings, "train_type"),
-        "top_operators": _top_counts(sightings, "operator"),
-        "top_locations": _top_counts(sightings, "location"),
-    }
-
-
-def _top_counts(items, key):
-    counts = {}
-    for item in items:
-        val = item.get(key)
-        if val:
-            counts[val] = counts.get(val, 0) + 1
-    return [{"name": k, "count": v} for k, v in sorted(counts.items(), key=lambda x: -x[1])[:5]]
