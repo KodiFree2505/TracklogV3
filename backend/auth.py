@@ -41,6 +41,7 @@ class UserResponse(BaseModel):
     email: str
     name: str
     picture: Optional[str] = None
+    auth_provider: Optional[str] = None
 
 class UserUpdate(BaseModel):
     name: Optional[str] = None
@@ -225,7 +226,8 @@ async def get_me(request: Request):
         user_id=user["user_id"],
         email=user["email"],
         name=user["name"],
-        picture=user.get("picture")
+        picture=user.get("picture"),
+        auth_provider=user.get("auth_provider")
     )
 
 @auth_router.post("/logout")

@@ -219,7 +219,7 @@ const ProfilePage = () => {
   }
 
   const currentPicture = previewImage || (user.picture?.startsWith('/api') ? `${BACKEND_URL}${user.picture}` : user.picture);
-  const isGoogleUser = user.email && !user.password_hash;
+  const isGoogleUser = user.auth_provider === 'google';
 
   return (
     <div className="min-h-screen bg-[#0f0f10]">
