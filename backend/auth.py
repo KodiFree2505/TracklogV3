@@ -42,6 +42,8 @@ class UserResponse(BaseModel):
     name: str
     picture: Optional[str] = None
     auth_provider: Optional[str] = None
+    is_profile_public: bool = False
+    auth_provider: Optional[str] = None
 
 class UserUpdate(BaseModel):
     name: Optional[str] = None
@@ -135,7 +137,7 @@ async def register(user_data: UserCreate, response: Response):
     
     set_session_cookie(response, session_token)
     
-    return UserResponse(user_id=user_id, email=user_data.email, name=user_data.name, picture=None)
+    return UserResponse(user_id=user_id, email=user_data.email, name=user_data.name, picture=None, auth_provider="email")
 
 @auth_router.post("/login", response_model=UserResponse)
 async def login(user_data: UserLogin, response: Response):
@@ -167,7 +169,9 @@ async def login(user_data: UserLogin, response: Response):
         user_id=user_doc["user_id"],
         email=user_doc["email"],
         name=user_doc["name"],
-        picture=user_doc.get("picture")
+        picture=user_doc.get("picture"),
+        auth_provider=user_doc.get("auth_provider", "email"),
+        is_profile_public=user_doc.get("is_profile_public", False)
     )
 
 @auth_router.post("/session")
@@ -228,7 +232,8 @@ async def get_me(request: Request):
         email=user["email"],
         name=user["name"],
         picture=user.get("picture"),
-        auth_provider=user.get("auth_provider")
+        auth_provider=user.get("auth_provider"),
+        is_profile_public=user.get("is_profile_public", False)
     )
 
 @auth_router.post("/logout")
@@ -271,7 +276,9 @@ async def update_profile(user_data: UserUpdate, request: Request):
         user_id=updated_user["user_id"],
         email=updated_user["email"],
         name=updated_user["name"],
-        picture=updated_user.get("picture")
+        picture=updated_user.get("picture"),
+        auth_provider=updated_user.get("auth_provider"),
+        is_profile_public=updated_user.get("is_profile_public", False)
     )
 
 @auth_router.put("/password")
@@ -308,3 +315,16 @@ async def delete_account(request: Request, response: Response):
     
     clear_session_cookie(response)
     return {"message": "Account deleted successfully"}
+
+
+class ProfileVisibilityUpdate(BaseModel):
+    is_profile_public: bool
+
+@auth_router.put("/profile/visibility")
+async def toggle_profile_visibility(data: ProfileVisibilityUpdate, request: Request):
+    user = await get_current_user(request)
+    await db.users.update_one(
+        {"user_id": user["user_id"]},
+        {"$set": {"is_profile_public": data.is_profile_public}}
+    )
+    return {"message": "Profile visibility updated", "is_profile_public": data.is_profile_public}

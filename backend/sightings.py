@@ -26,6 +26,7 @@ class SightingCreate(BaseModel):
     sighting_time: str
     notes: Optional[str] = None
     photos: List[str] = []
+    is_public: bool = False
 
 class SightingResponse(BaseModel):
     sighting_id: str
@@ -40,6 +41,8 @@ class SightingResponse(BaseModel):
     sighting_time: str
     notes: Optional[str] = None
     photos: List[str] = []
+    is_public: bool = False
+    share_id: Optional[str] = None
     created_at: datetime
 
 class SightingStats(BaseModel):
@@ -94,6 +97,8 @@ async def create_sighting(sighting_data: SightingCreate, request: Request):
         "sighting_time": sighting_data.sighting_time,
         "notes": sighting_data.notes,
         "photos": saved_photos,
+        "is_public": sighting_data.is_public,
+        "share_id": uuid.uuid4().hex[:8],
         "created_at": datetime.now(timezone.utc)
     }
     
@@ -106,7 +111,17 @@ async def get_sightings(request: Request, limit: int = 100, skip: int = 0):
     sightings = await db.sightings.find(
         {"user_id": user_id}, {"_id": 0}
     ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
-    return [SightingResponse(**s) for s in sightings]
+    results = []
+    for s in sightings:
+        if "share_id" not in s:
+            s["share_id"] = uuid.uuid4().hex[:8]
+            s["is_public"] = s.get("is_public", False)
+            await db.sightings.update_one(
+                {"sighting_id": s["sighting_id"]},
+                {"$set": {"share_id": s["share_id"], "is_public": s["is_public"]}}
+            )
+        results.append(SightingResponse(**s))
+    return results
 
 @sightings_router.get("/stats", response_model=SightingStats)
 async def get_sighting_stats(request: Request):
@@ -182,3 +197,22 @@ async def delete_sighting(sighting_id: str, request: Request):
     
     await db.sightings.delete_one({"sighting_id": sighting_id, "user_id": user_id})
     return {"message": "Sighting deleted successfully"}
+
+
+class VisibilityUpdate(BaseModel):
+    is_public: bool
+
+@sightings_router.put("/{sighting_id}/visibility")
+async def toggle_sighting_visibility(sighting_id: str, data: VisibilityUpdate, request: Request):
+    user_id = await get_current_user_id(request)
+    sighting = await db.sightings.find_one(
+        {"sighting_id": sighting_id, "user_id": user_id}, {"_id": 0}
+    )
+    if not sighting:
+        raise HTTPException(status_code=404, detail="Sighting not found")
+    
+    await db.sightings.update_one(
+        {"sighting_id": sighting_id},
+        {"$set": {"is_public": data.is_public}}
+    )
+    return {"message": "Visibility updated", "is_public": data.is_public}

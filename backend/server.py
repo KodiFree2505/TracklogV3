@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 
 from auth import auth_router, set_db as set_auth_db
 from sightings import sightings_router, set_db as set_sightings_db
+from public import public_router, set_db as set_public_db
 
 # --------------------------------------------------
 # Paths & Env
@@ -46,6 +47,7 @@ async def lifespan(app: FastAPI):
     # Inject DB into modules
     set_auth_db(db)
     set_sightings_db(db)
+    set_public_db(db)
 
     logger.info(f"✅ Connected to MongoDB: {db_name}")
     yield
@@ -73,6 +75,7 @@ os.makedirs(UPLOADS_DIR, exist_ok=True)
 # --------------------------------------------------
 api_router.include_router(auth_router)
 api_router.include_router(sightings_router)
+api_router.include_router(public_router)
 
 app.include_router(api_router)
 

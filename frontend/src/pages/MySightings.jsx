@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutGrid, LogOut, User, Loader2, Camera, Plus, Search, Grid, List, Train, MapPin, Calendar, Clock, Trash2, Menu, Zap } from 'lucide-react';
+import { LayoutGrid, LogOut, User, Loader2, Camera, Plus, Search, Grid, List, Train, MapPin, Calendar, Clock, Trash2, Menu, Zap, Share2, Link2, Globe, Lock, Check } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog';
@@ -63,6 +63,7 @@ const MySightings = () => {
   const [deleteId, setDeleteId] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [selectedSighting, setSelectedSighting] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -87,6 +88,33 @@ const MySightings = () => {
     fetch(`${API}/sightings/${deleteId}`, { method: 'DELETE', credentials: 'include' })
       .then(res => { if (res.ok) setSightings(sightings.filter(s => s.sighting_id !== deleteId)); })
       .finally(() => { setDeleting(false); setDeleteId(null); });
+  };
+
+  const handleToggleVisibility = async (e, sightingId, currentPublic) => {
+    e.stopPropagation();
+    const newPublic = !currentPublic;
+    try {
+      const res = await fetch(`${API}/sightings/${sightingId}/visibility`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ is_public: newPublic })
+      });
+      if (res.ok) {
+        setSightings(prev => prev.map(s => s.sighting_id === sightingId ? { ...s, is_public: newPublic } : s));
+      }
+    } catch (err) {
+      console.error('Failed to toggle visibility:', err);
+    }
+  };
+
+  const handleCopyLink = (e, shareId) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/share/sighting/${shareId}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(shareId);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
   };
 
   const filtered = sightings.filter(s => {
@@ -172,6 +200,7 @@ const MySightings = () => {
                   <div className="aspect-video bg-gray-800 relative">
                     {photo ? <img src={photo} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Train size={40} className="text-gray-700" /></div>}
                     {photoCount > 1 && <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-xs text-white">+{photoCount - 1}</div>}
+                    {s.is_public && <div className="absolute top-2 left-2 bg-green-500/80 px-2 py-0.5 rounded text-[10px] text-white flex items-center gap-1"><Globe size={10} />Public</div>}
                   </div>
                   <div className="p-3 md:p-4">
                     <div className="flex justify-between items-start">
@@ -180,7 +209,27 @@ const MySightings = () => {
                         <p className="text-orange-500 text-sm">{s.train_type}</p>
                         {s.traction_type && <p className="text-gray-500 text-xs flex items-center gap-1 mt-1"><Zap size={12} />{s.traction_type}</p>}
                       </div>
-                      <button onClick={(e) => { e.stopPropagation(); setDeleteId(s.sighting_id); }} className="text-gray-500 hover:text-red-500 p-1 flex-shrink-0"><Trash2 size={16} /></button>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button
+                          onClick={(e) => handleToggleVisibility(e, s.sighting_id, s.is_public)}
+                          className={`p-1 rounded transition-colors ${s.is_public ? 'text-green-400 hover:text-green-300' : 'text-gray-600 hover:text-gray-400'}`}
+                          title={s.is_public ? 'Make private' : 'Make public'}
+                          data-testid={`toggle-visibility-${s.sighting_id}`}
+                        >
+                          {s.is_public ? <Globe size={15} /> : <Lock size={15} />}
+                        </button>
+                        {s.is_public && s.share_id && (
+                          <button
+                            onClick={(e) => handleCopyLink(e, s.share_id)}
+                            className="p-1 text-gray-500 hover:text-orange-400 transition-colors"
+                            title="Copy share link"
+                            data-testid={`copy-link-${s.sighting_id}`}
+                          >
+                            {copiedId === s.share_id ? <Check size={15} className="text-green-400" /> : <Link2 size={15} />}
+                          </button>
+                        )}
+                        <button onClick={(e) => { e.stopPropagation(); setDeleteId(s.sighting_id); }} className="text-gray-500 hover:text-red-500 p-1"><Trash2 size={15} /></button>
+                      </div>
                     </div>
                     <p className="text-gray-400 text-xs md:text-sm mt-2 flex items-center gap-1 truncate"><MapPin size={14} className="flex-shrink-0" />{s.location}</p>
                   </div>
@@ -194,14 +243,33 @@ const MySightings = () => {
                     <div className="flex justify-between items-start">
                       <div className="min-w-0">
                         <h3 className="text-white font-semibold truncate">{s.train_number}</h3>
-                        <p className="text-orange-500 text-sm truncate">{s.train_type} • {s.operator}</p>
+                        <p className="text-orange-500 text-sm truncate">{s.train_type} {'\u2022'} {s.operator}</p>
                         {s.traction_type && <p className="text-gray-500 text-xs flex items-center gap-1"><Zap size={12} />{s.traction_type}</p>}
                       </div>
-                      <button onClick={(e) => { e.stopPropagation(); setDeleteId(s.sighting_id); }} className="text-gray-500 hover:text-red-500 p-1 flex-shrink-0"><Trash2 size={16} /></button>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button
+                          onClick={(e) => handleToggleVisibility(e, s.sighting_id, s.is_public)}
+                          className={`p-1 rounded transition-colors ${s.is_public ? 'text-green-400 hover:text-green-300' : 'text-gray-600 hover:text-gray-400'}`}
+                          title={s.is_public ? 'Make private' : 'Make public'}
+                        >
+                          {s.is_public ? <Globe size={15} /> : <Lock size={15} />}
+                        </button>
+                        {s.is_public && s.share_id && (
+                          <button
+                            onClick={(e) => handleCopyLink(e, s.share_id)}
+                            className="p-1 text-gray-500 hover:text-orange-400 transition-colors"
+                            title="Copy share link"
+                          >
+                            {copiedId === s.share_id ? <Check size={15} className="text-green-400" /> : <Link2 size={15} />}
+                          </button>
+                        )}
+                        <button onClick={(e) => { e.stopPropagation(); setDeleteId(s.sighting_id); }} className="text-gray-500 hover:text-red-500 p-1"><Trash2 size={15} /></button>
+                      </div>
                     </div>
                     <div className="flex flex-wrap gap-2 md:gap-4 mt-2 text-xs md:text-sm text-gray-400">
                       <span className="flex items-center gap-1 truncate"><MapPin size={14} className="flex-shrink-0" /><span className="truncate">{s.location}</span></span>
                       <span className="flex items-center gap-1"><Clock size={14} />{s.sighting_time}</span>
+                      {s.is_public && <span className="flex items-center gap-1 text-green-400"><Globe size={12} />Public</span>}
                     </div>
                   </div>
                 </div>
@@ -282,6 +350,49 @@ const MySightings = () => {
                     <p className="text-gray-500 text-xs md:text-sm">Notes</p>
                     <p className="text-white text-sm md:text-base">{selectedSighting.notes}</p>
                   </div>
+                )}
+              </div>
+
+              {/* Sharing controls */}
+              <div className="mt-4 pt-4 border-t border-gray-800">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {selectedSighting.is_public ? (
+                      <Globe size={16} className="text-green-400" />
+                    ) : (
+                      <Lock size={16} className="text-gray-500" />
+                    )}
+                    <span className="text-sm text-gray-300">
+                      {selectedSighting.is_public ? 'Public — anyone with the link can view' : 'Private — only you can see this'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      handleToggleVisibility(e, selectedSighting.sighting_id, selectedSighting.is_public);
+                      setSelectedSighting(prev => prev ? { ...prev, is_public: !prev.is_public } : null);
+                    }}
+                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                      selectedSighting.is_public
+                        ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                        : 'bg-green-600/20 text-green-400 hover:bg-green-600/30'
+                    }`}
+                    data-testid="dialog-toggle-visibility"
+                  >
+                    {selectedSighting.is_public ? 'Make Private' : 'Make Public'}
+                  </button>
+                </div>
+                {selectedSighting.is_public && selectedSighting.share_id && (
+                  <button
+                    onClick={(e) => handleCopyLink(e, selectedSighting.share_id)}
+                    className="mt-3 w-full flex items-center justify-center gap-2 bg-[#0f0f10] border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-gray-300 hover:border-orange-500/50 transition-colors"
+                    data-testid="dialog-copy-link"
+                  >
+                    {copiedId === selectedSighting.share_id ? (
+                      <><Check size={16} className="text-green-400" /> Link Copied!</>
+                    ) : (
+                      <><Link2 size={16} /> Copy Share Link</>
+                    )}
+                  </button>
                 )}
               </div>
             </>

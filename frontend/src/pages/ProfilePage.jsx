@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   LayoutGrid, LogOut, User, Loader2, Camera, Settings, Lock, Trash2,
-  Menu, Check, AlertTriangle, Mail, Shield
+  Menu, Check, AlertTriangle, Mail, Shield, Globe, Link2, Copy
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -73,6 +73,8 @@ const ProfilePage = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
+  const [isProfilePublic, setIsProfilePublic] = useState(false);
+  const [profileLinkCopied, setProfileLinkCopied] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -83,12 +85,38 @@ const ProfilePage = () => {
   useEffect(() => {
     if (user) {
       setName(user.name || '');
+      setIsProfilePublic(user.is_profile_public || false);
     }
   }, [user]);
 
   const handleLogout = async () => {
     await logout();
     navigate('/');
+  };
+
+  const handleToggleProfileVisibility = async () => {
+    const newValue = !isProfilePublic;
+    try {
+      const res = await fetch(`${API}/auth/profile/visibility`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ is_profile_public: newValue })
+      });
+      if (res.ok) {
+        setIsProfilePublic(newValue);
+      }
+    } catch (err) {
+      console.error('Failed to toggle profile visibility:', err);
+    }
+  };
+
+  const handleCopyProfileLink = () => {
+    const url = `${window.location.origin}/share/user/${user.user_id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setProfileLinkCopied(true);
+      setTimeout(() => setProfileLinkCopied(false), 2000);
+    });
   };
 
   const handleImageSelect = (e) => {
@@ -344,6 +372,50 @@ const ProfilePage = () => {
             Save Changes
           </Button>
         </form>
+
+        {/* Sharing Section */}
+        <div className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-4 md:p-6 mb-4 md:mb-6">
+          <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+            <Globe size={18} className="text-orange-500" /> Public Profile
+          </h3>
+          <p className="text-gray-400 text-sm mb-4">
+            When enabled, anyone with your profile link can see your public sightings.
+          </p>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              {isProfilePublic ? (
+                <Globe size={18} className="text-green-400" />
+              ) : (
+                <Lock size={18} className="text-gray-500" />
+              )}
+              <span className="text-gray-300 text-sm">
+                {isProfilePublic ? 'Your profile is public' : 'Your profile is private'}
+              </span>
+            </div>
+            <button
+              onClick={handleToggleProfileVisibility}
+              className={`relative w-12 h-6 rounded-full transition-colors ${isProfilePublic ? 'bg-green-500' : 'bg-gray-700'}`}
+              data-testid="toggle-profile-visibility"
+            >
+              <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${isProfilePublic ? 'left-6.5 translate-x-0' : 'left-0.5'}`}
+                style={{ left: isProfilePublic ? '26px' : '2px' }}
+              />
+            </button>
+          </div>
+          {isProfilePublic && (
+            <button
+              onClick={handleCopyProfileLink}
+              className="w-full flex items-center justify-center gap-2 bg-[#0f0f10] border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-gray-300 hover:border-orange-500/50 transition-colors"
+              data-testid="copy-profile-link"
+            >
+              {profileLinkCopied ? (
+                <><Check size={16} className="text-green-400" /> Profile Link Copied!</>
+              ) : (
+                <><Link2 size={16} /> Copy Profile Link</>
+              )}
+            </button>
+          )}
+        </div>
 
         {/* Password Section */}
         <form onSubmit={handlePasswordUpdate} className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-4 md:p-6 mb-4 md:mb-6">
