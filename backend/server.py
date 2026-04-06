@@ -92,7 +92,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "https://rail-tracker-9.preview.emergentagent.com",
+        "https://rails-log.preview.emergentagent.com",
         "https://rail-tracker-9.emergent.host",
         "https://nsw-train-spotting.com",
     ],
