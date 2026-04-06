@@ -1,40 +1,39 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { LayoutGrid, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
-  // Destructure user so we can verify the session was actually established
-  const { checkAuth, user } = useAuth();
+  const location = useLocation();
+  const { exchangeSession } = useAuth();
+  const hasProcessed = useRef(false);
 
   useEffect(() => {
-    let isMounted = true;
+    if (hasProcessed.current) return;
+    hasProcessed.current = true;
 
     const handleCallback = async () => {
       try {
-        // 1. Trigger the session check
-        await checkAuth();
-        
-        if (isMounted) {
-          /* IMPORTANT: checkAuth usually sets user state. 
-             We need to ensure we actually have a user before moving to the dashboard.
-          */
-          // We check the result of the fetch indirectly or use the state logic
-          navigate('/dashboard', { replace: true });
+        const hash = window.location.hash || location.hash || '';
+        const params = new URLSearchParams(hash.replace('#', ''));
+        const sessionId = params.get('session_id');
+
+        if (!sessionId) {
+          throw new Error('No session_id found in URL');
         }
+
+        await exchangeSession(sessionId);
+        window.history.replaceState(null, '', window.location.pathname);
+        navigate('/dashboard', { replace: true });
       } catch (error) {
-        console.error("Authentication callback failed:", error);
-        if (isMounted) {
-          navigate('/login', { replace: true });
-        }
+        console.error("Google auth callback failed:", error);
+        navigate('/auth', { replace: true });
       }
     };
 
     handleCallback();
-
-    return () => { isMounted = false; };
-  }, [checkAuth, navigate]);
+  }, [exchangeSession, navigate, location.hash]);
 
   return (
     <div className="min-h-screen bg-[#0f0f10] flex items-center justify-center">

@@ -55,12 +55,13 @@ class SessionRequest(BaseModel):
     session_id: str
 
 def set_session_cookie(response: Response, session_token: str):
+    is_dev = os.environ.get("ENV", "production") == "development"
     response.set_cookie(
         key="session_token",
         value=session_token,
         httponly=True,
-        secure=False,
-        samesite="lax",
+        secure=not is_dev,
+        samesite="lax" if is_dev else "none",
         path="/",
         max_age=7 * 24 * 60 * 60
     )
