@@ -13,6 +13,7 @@ import BreakdownChart from '../components/analytics/BreakdownChart';
 import DonutChart from '../components/analytics/DonutChart';
 import { HourlyChart, DayOfWeekChart } from '../components/analytics/PatternCharts';
 import { StreakCard, PlatformStats } from '../components/analytics/StatsCards';
+import AiSummary from '../components/analytics/AiSummary';
 
 const BACKEND_URL = '';
 const API = '/api';
@@ -169,6 +170,13 @@ const Dashboard = () => {
           <StatCard icon={MapPin} label="Locations" value={uniqueLocations} />
           <StatCard icon={Clock} label="Last Sighting" value={lastSighting} />
         </div>
+
+        {/* AI Summary */}
+        {!analyticsLoading && analytics && stats && stats.total_sightings > 0 && (
+          <div className="mb-6 md:mb-8">
+            <AiSummary analytics={analytics} stats={stats} userName={currentUser?.name?.split(' ')[0]} />
+          </div>
+        )}
 
         {/* Timeline */}
         {!analyticsLoading && analytics && (
