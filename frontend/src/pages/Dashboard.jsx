@@ -8,8 +8,8 @@ import {
 import { Button } from '../components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '../components/ui/sheet';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const BACKEND_URL = '';
+const API = '/api';
 
 const StatCard = ({ icon: Icon, label, value }) => (
   <div className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-4 md:p-6 hover:border-orange-500/30 transition-colors">

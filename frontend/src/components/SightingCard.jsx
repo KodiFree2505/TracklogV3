@@ -1,7 +1,7 @@
 import React from 'react';
 import { Train, MapPin, Calendar, Trash2 } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = '';
 
 export function formatDate(dateStr) {
   const date = new Date(dateStr);

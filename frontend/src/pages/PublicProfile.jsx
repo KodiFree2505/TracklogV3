@@ -3,8 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import { LayoutGrid, Loader2, User, Camera } from 'lucide-react';
 import PublicSightingCard from '../components/PublicSightingCard';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const BACKEND_URL = '';
+const API = '/api';
 
 export default function PublicProfile() {
   const { userId } = useParams();

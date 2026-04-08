@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { LayoutGrid, Loader2, Train, MapPin, Clock, Calendar, Zap, User, FileText, ExternalLink } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const BACKEND_URL = '';
+const API = '/api';
 
 function getPhotoUrl(photo) {
   if (!photo) return null;

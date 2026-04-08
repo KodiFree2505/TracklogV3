@@ -14,8 +14,8 @@ import {
 } from '../components/ui/select';
 import { Sheet, SheetContent, SheetTrigger } from '../components/ui/sheet';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const BACKEND_URL = '';
+const API = '/api';
 const MAX_PHOTOS = 5;
 
 const TRAIN_TYPES = [
