@@ -93,12 +93,7 @@ app.mount(
 # --------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://rails-log.preview.emergentagent.com",
-        "https://rail-tracker-9.emergent.host",
-        "https://nsw-train-spotting.com",
-    ],
+    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
