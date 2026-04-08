@@ -237,6 +237,132 @@ async def get_sighting_stats(request: Request):
         top_train_types=top_train_types, top_operators=top_operators, top_locations=top_locations
     )
 
+@sightings_router.get("/analytics")
+async def get_analytics(request: Request):
+    user_id = await get_current_user_id(request)
+    sightings = await db.sightings.find({"user_id": user_id}, {"_id": 0}).to_list(5000)
+
+    # Platform-wide stats
+    all_count = await db.sightings.count_documents({})
+    all_users = await db.users.count_documents({})
+
+    if not sightings:
+        return {
+            "sightings_over_time": [],
+            "by_train_type": [],
+            "by_traction_type": [],
+            "by_operator": [],
+            "by_location": [],
+            "time_of_day": [],
+            "day_of_week": [],
+            "streak": {"current": 0, "longest": 0},
+            "monthly_trend": [],
+            "platform": {"total_sightings": all_count, "total_users": all_users},
+        }
+
+    from collections import Counter, defaultdict
+
+    # Sightings over time (last 30 days)
+    now = datetime.now(timezone.utc)
+    daily_counts = defaultdict(int)
+    for s in sightings:
+        date_str = s.get("sighting_date", "")
+        if date_str:
+            daily_counts[date_str] += 1
+
+    sightings_over_time = []
+    for i in range(29, -1, -1):
+        d = now - __import__('datetime').timedelta(days=i)
+        ds = d.strftime("%Y-%m-%d")
+        sightings_over_time.append({"date": ds, "count": daily_counts.get(ds, 0)})
+
+    # Monthly trend (last 12 months)
+    monthly_counts = defaultdict(int)
+    for s in sightings:
+        date_str = s.get("sighting_date", "")
+        if len(date_str) >= 7:
+            monthly_counts[date_str[:7]] += 1
+    monthly_trend = []
+    for i in range(11, -1, -1):
+        d = now - __import__('datetime').timedelta(days=i * 30)
+        ms = d.strftime("%Y-%m")
+        monthly_trend.append({"month": ms, "count": monthly_counts.get(ms, 0)})
+
+    # Breakdowns
+    by_train_type = [{"name": k, "count": v} for k, v in Counter(s.get("train_type", "Unknown") for s in sightings).most_common(10)]
+    by_traction_type = [{"name": k, "count": v} for k, v in Counter(s.get("traction_type", "Unknown") for s in sightings if s.get("traction_type")).most_common(10)]
+    by_operator = [{"name": k, "count": v} for k, v in Counter(s.get("operator", "Unknown") for s in sightings).most_common(10)]
+    by_location = [{"name": k, "count": v} for k, v in Counter(s.get("location", "Unknown") for s in sightings).most_common(10)]
+
+    # Time of day distribution (hourly buckets)
+    hour_counts = defaultdict(int)
+    for s in sightings:
+        t = s.get("sighting_time", "")
+        if t and ":" in t:
+            try:
+                hour = int(t.split(":")[0])
+                hour_counts[hour] += 1
+            except ValueError:
+                pass
+    time_of_day = [{"hour": h, "label": f"{h:02d}:00", "count": hour_counts.get(h, 0)} for h in range(24)]
+
+    # Day of week distribution
+    day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    dow_counts = defaultdict(int)
+    for s in sightings:
+        date_str = s.get("sighting_date", "")
+        if date_str:
+            try:
+                d = datetime.strptime(date_str, "%Y-%m-%d")
+                dow_counts[d.weekday()] += 1
+            except ValueError:
+                pass
+    day_of_week = [{"day": day_names[i], "count": dow_counts.get(i, 0)} for i in range(7)]
+
+    # Streak calculation
+    unique_dates = sorted(set(s.get("sighting_date", "") for s in sightings if s.get("sighting_date")), reverse=True)
+    current_streak = 0
+    longest_streak = 0
+    streak = 0
+    if unique_dates:
+        today = now.strftime("%Y-%m-%d")
+        yesterday = (now - __import__('datetime').timedelta(days=1)).strftime("%Y-%m-%d")
+        # Current streak
+        if unique_dates[0] in (today, yesterday):
+            current_streak = 1
+            for i in range(1, len(unique_dates)):
+                prev = datetime.strptime(unique_dates[i - 1], "%Y-%m-%d")
+                curr = datetime.strptime(unique_dates[i], "%Y-%m-%d")
+                if (prev - curr).days == 1:
+                    current_streak += 1
+                else:
+                    break
+        # Longest streak
+        sorted_asc = sorted(unique_dates)
+        streak = 1
+        longest_streak = 1
+        for i in range(1, len(sorted_asc)):
+            prev = datetime.strptime(sorted_asc[i - 1], "%Y-%m-%d")
+            curr = datetime.strptime(sorted_asc[i], "%Y-%m-%d")
+            if (curr - prev).days == 1:
+                streak += 1
+                longest_streak = max(longest_streak, streak)
+            else:
+                streak = 1
+
+    return {
+        "sightings_over_time": sightings_over_time,
+        "monthly_trend": monthly_trend,
+        "by_train_type": by_train_type,
+        "by_traction_type": by_traction_type,
+        "by_operator": by_operator,
+        "by_location": by_location,
+        "time_of_day": time_of_day,
+        "day_of_week": day_of_week,
+        "streak": {"current": current_streak, "longest": longest_streak},
+        "platform": {"total_sightings": all_count, "total_users": all_users},
+    }
+
 @sightings_router.get("/{sighting_id}", response_model=SightingResponse)
 async def get_sighting(sighting_id: str, request: Request):
     user_id = await get_current_user_id(request)

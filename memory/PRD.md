@@ -4,7 +4,7 @@
 Create a pixel-perfect clone of https://trainspot-hub.emergent.host/ matching its design, layout, colors, fonts, images, animations, and structure. Implement authentication (Google OAuth + manual), protected routes, dashboard with stats, logging sightings (with photos and 'traction type' field), a gallery view of sightings, and a profile management page.
 
 ## Architecture
-- **Frontend**: React + Tailwind CSS + Shadcn UI (port 3000)
+- **Frontend**: React + Tailwind CSS + Shadcn UI + Recharts (port 3000)
 - **Backend**: FastAPI + Motor (async MongoDB) (port 8001)
 - **Database**: MongoDB (test_database)
 - **Auth**: Email/Password (bcrypt) + Emergent-managed Google OAuth, session cookies (HttpOnly)
@@ -13,17 +13,29 @@ Create a pixel-perfect clone of https://trainspot-hub.emergent.host/ matching it
 - Pixel-perfect landing page (LandingPage.jsx, HeroSection.jsx, FeaturesSection.jsx)
 - Email/Password + Google OAuth authentication
 - Protected routes (Dashboard, Log Sighting, My Sightings, Profile)
-- Dashboard with stats cards and top lists
-- Log Sighting form with train details, traction type, location/time, photos (base64), notes
-- My Sightings gallery/list view with search, delete, detail modal
-- Profile management (name, picture, password change, delete account)
+- Comprehensive Dashboard with:
+  - Stats cards (total, this month, locations, last sighting)
+  - Sightings over time (area chart, last 30 days)
+  - Train type and traction type donut charts
+  - Top operators and locations horizontal bar charts
+  - Time-of-day hourly distribution chart
+  - Day-of-week activity chart
+  - Streak tracking (current + best)
+  - Platform-wide stats (total sightings, total users)
+- Log Sighting form with train details, traction type, location/time, photos (FormData + JSON), notes
+- Public sharing: toggle sightings/profile public, copy shareable links
+- My Sightings gallery/list view with search, delete, share controls, detail modal
+- Profile management (name, picture, password change, profile visibility, delete account)
+- Public pages: /share/sighting/:shareId, /share/user/:userId
 
 ## Key Fixes Applied (April 2026)
-- **LogSighting.jsx truncation**: Fully rebuilt the component (was cut off at line 103)
-- **Google OAuth race condition**: Fixed AuthCallback to properly extract session_id and call exchangeSession()
-- **AuthProvider race condition**: Skip checkAuth() when session_id is in URL hash
-- **Cookie settings**: Updated to Secure + SameSite=none for HTTPS preview domain
-- **ProfilePage auth_provider**: Fixed detection of Google vs email accounts
+- **"Body is disturbed or locked"**: Created safeFetch (XHR-based) to bypass emergent-main.js fetch monkey-patching
+- **Relative URLs**: All API calls use relative paths (/api/...) for cross-domain compatibility
+- **CORS**: Dynamic from CORS_ORIGINS env var
+- **Google OAuth race condition**: AuthProvider skips checkAuth when session_id in hash
+- **Cookie settings**: Secure + SameSite=lax
+- **LogSighting.jsx truncation**: Fully rebuilt
+- **FormData upload**: Added /api/sightings/upload endpoint for multipart file uploads
 
 ## Backlog
-- None (all initial requirements implemented)
+- None (all requirements implemented + analytics + sharing features added)
