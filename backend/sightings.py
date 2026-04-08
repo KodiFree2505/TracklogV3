@@ -1,10 +1,13 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Form, File, UploadFile
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime, timezone
 import uuid
 import os
 import base64
+import logging
+
+logger = logging.getLogger(__name__)
 
 sightings_router = APIRouter(prefix="/sightings", tags=["sightings"])
 
@@ -62,7 +65,12 @@ async def get_current_user_id(request: Request) -> str:
 
 @sightings_router.post("", response_model=SightingResponse)
 async def create_sighting(sighting_data: SightingCreate, request: Request):
-    user_id = await get_current_user_id(request)
+    try:
+        user_id = await get_current_user_id(request)
+    except Exception as e:
+        logger.error(f"Auth error in create_sighting: {e}")
+        raise
+    
     sighting_id = f"sighting_{uuid.uuid4().hex[:12]}"
     
     upload_dir = "/app/backend/uploads"
@@ -80,7 +88,7 @@ async def create_sighting(sighting_data: SightingCreate, request: Request):
                     f.write(base64.b64decode(data))
                 saved_photos.append(f"/api/uploads/{filename}")
             except Exception as e:
-                print(f"Error saving photo: {e}")
+                logger.error(f"Error saving photo: {e}")
         elif photo:
             saved_photos.append(photo)
     
@@ -98,6 +106,68 @@ async def create_sighting(sighting_data: SightingCreate, request: Request):
         "notes": sighting_data.notes,
         "photos": saved_photos,
         "is_public": sighting_data.is_public,
+        "share_id": uuid.uuid4().hex[:8],
+        "created_at": datetime.now(timezone.utc)
+    }
+    
+    try:
+        await db.sightings.insert_one(sighting_doc)
+    except Exception as e:
+        logger.error(f"MongoDB insert error: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    
+    sighting_doc.pop("_id", None)
+    return SightingResponse(**sighting_doc)
+
+@sightings_router.post("/upload", response_model=SightingResponse)
+async def create_sighting_with_files(
+    request: Request,
+    train_number: str = Form(...),
+    train_type: str = Form(...),
+    traction_type: str = Form(...),
+    operator: str = Form(...),
+    location: str = Form(...),
+    sighting_date: str = Form(...),
+    sighting_time: str = Form(...),
+    route: str = Form(""),
+    notes: str = Form(""),
+    is_public: bool = Form(False),
+    photos: List[UploadFile] = File(default=[]),
+):
+    user_id = await get_current_user_id(request)
+    sighting_id = f"sighting_{uuid.uuid4().hex[:12]}"
+    
+    upload_dir = "/app/backend/uploads"
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    saved_photos = []
+    for i, photo in enumerate(photos):
+        if photo.filename:
+            try:
+                ext = photo.filename.rsplit(".", 1)[-1] if "." in photo.filename else "jpg"
+                filename = f"{sighting_id}_{i}.{ext}"
+                filepath = os.path.join(upload_dir, filename)
+                content = await photo.read()
+                with open(filepath, "wb") as f:
+                    f.write(content)
+                saved_photos.append(f"/api/uploads/{filename}")
+            except Exception as e:
+                logger.error(f"Error saving uploaded photo: {e}")
+    
+    sighting_doc = {
+        "sighting_id": sighting_id,
+        "user_id": user_id,
+        "train_number": train_number,
+        "train_type": train_type,
+        "traction_type": traction_type,
+        "operator": operator,
+        "route": route or None,
+        "location": location,
+        "sighting_date": sighting_date,
+        "sighting_time": sighting_time,
+        "notes": notes or None,
+        "photos": saved_photos,
+        "is_public": is_public,
         "share_id": uuid.uuid4().hex[:8],
         "created_at": datetime.now(timezone.utc)
     }

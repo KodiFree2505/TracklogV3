@@ -151,26 +151,51 @@ export default function LogSighting() {
 
     setSubmitting(true);
     try {
-      const payload = { ...form, photos };
-      console.log('[LogSighting] Submitting payload:', { ...payload, photos: `${payload.photos.length} photos` });
-      const res = await fetch(`${API}/sightings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      });
+      let res;
+      if (photos.length > 0) {
+        // Use FormData/multipart for file uploads
+        const formData = new FormData();
+        formData.append('train_number', form.train_number);
+        formData.append('train_type', form.train_type);
+        formData.append('traction_type', form.traction_type);
+        formData.append('operator', form.operator);
+        formData.append('route', form.route || '');
+        formData.append('location', form.location);
+        formData.append('sighting_date', form.sighting_date);
+        formData.append('sighting_time', form.sighting_time);
+        formData.append('notes', form.notes || '');
+        formData.append('is_public', 'false');
+        // Convert base64 photos to File objects
+        for (let i = 0; i < photos.length; i++) {
+          const base64 = photos[i];
+          const blob = await fetch(base64).then(r => r.blob());
+          formData.append('photos', blob, `photo_${i}.jpg`);
+        }
+        res = await fetch(`${API}/sightings/upload`, {
+          method: 'POST',
+          credentials: 'include',
+          body: formData,
+        });
+      } else {
+        // Use JSON for no-photo submissions
+        const payload = { ...form, photos: [] };
+        res = await fetch(`${API}/sightings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload),
+        });
+      }
 
-      console.log('[LogSighting] Response status:', res.status);
       if (!res.ok) {
-        const text = await res.text();
-        console.error('[LogSighting] Error response body:', text);
-        let data = {};
-        try { data = JSON.parse(text); } catch(e) {}
-        let msg = 'Failed to create sighting';
-        if (typeof data.detail === 'string') {
-          msg = data.detail;
-        } else if (Array.isArray(data.detail)) {
-          msg = data.detail.map(e => e.msg || e.message || JSON.stringify(e)).join(', ');
+        const text = await res.text().catch(() => '');
+        let msg = `Error ${res.status}`;
+        try {
+          const data = JSON.parse(text);
+          if (typeof data.detail === 'string') msg = data.detail;
+          else if (Array.isArray(data.detail)) msg = data.detail.map(e => e.msg || JSON.stringify(e)).join(', ');
+        } catch(e) {
+          if (text) msg = text.slice(0, 200);
         }
         throw new Error(msg);
       }
@@ -178,7 +203,8 @@ export default function LogSighting() {
       setSuccess(true);
       setTimeout(() => navigate('/sightings'), 1500);
     } catch (err) {
-      setError(err.message);
+      console.error('[LogSighting] Submit error:', err);
+      setError(err.message || 'Network error - please check your connection');
     } finally {
       setSubmitting(false);
     }
