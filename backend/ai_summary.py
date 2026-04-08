@@ -2,6 +2,7 @@ import os
 import json
 import uuid
 import logging
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Request
 from dotenv import load_dotenv
 
@@ -17,18 +18,37 @@ def set_db(database):
     global db
     db = database
 
-async def get_current_user_id(request):
+async def get_current_user(request: Request) -> dict:
     session_token = request.cookies.get("session_token")
     if not session_token:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            session_token = auth_header[7:]
+    if not session_token:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    user = await db.users.find_one({"session_token": session_token}, {"_id": 0})
-    if not user:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    return user["user_id"]
+    session_doc = await db.user_sessions.find_one(
+        {"session_token": session_token}, {"_id": 0}
+    )
+    if not session_doc:
+        raise HTTPException(status_code=401, detail="Invalid session")
+    expires_at = session_doc["expires_at"]
+    if isinstance(expires_at, str):
+        expires_at = datetime.fromisoformat(expires_at)
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=401, detail="Session expired")
+    user_doc = await db.users.find_one(
+        {"user_id": session_doc["user_id"]}, {"_id": 0, "password_hash": 0}
+    )
+    if not user_doc:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user_doc
 
 @ai_router.post("/analytics-summary")
 async def generate_analytics_summary(request: Request):
-    user_id = await get_current_user_id(request)
+    user = await get_current_user(request)
+    user_id = user["user_id"]
 
     body = await request.json()
     analytics = body.get("analytics", {})
