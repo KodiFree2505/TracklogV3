@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import safeFetch from '../lib/safeFetch';
 import {
   LayoutGrid, LogOut, User, Loader2, Camera, X, Upload,
   Train, MapPin, FileText, CheckCircle, Menu, Clock3, CalendarDays, Zap
@@ -171,7 +172,7 @@ export default function LogSighting() {
           const blob = await fetch(base64).then(r => r.blob());
           formData.append('photos', blob, `photo_${i}.jpg`);
         }
-        res = await fetch(`${API}/sightings/upload`, {
+        res = await safeFetch(`${API}/sightings/upload`, {
           method: 'POST',
           credentials: 'include',
           body: formData,
@@ -179,7 +180,7 @@ export default function LogSighting() {
       } else {
         // Use JSON for no-photo submissions
         const payload = { ...form, photos: [] };
-        res = await fetch(`${API}/sightings`, {
+        res = await safeFetch(`${API}/sightings`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',

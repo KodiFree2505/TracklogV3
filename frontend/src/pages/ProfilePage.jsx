@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import safeFetch from '../lib/safeFetch';
 import {
   LayoutGrid, LogOut, User, Loader2, Camera, Settings, Lock, Trash2,
   Menu, Check, AlertTriangle, Mail, Shield, Globe, Link2, Copy
@@ -97,7 +98,7 @@ const ProfilePage = () => {
   const handleToggleProfileVisibility = async () => {
     const newValue = !isProfilePublic;
     try {
-      const res = await fetch(`${API}/auth/profile/visibility`, {
+      const res = await safeFetch(`${API}/auth/profile/visibility`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -147,7 +148,7 @@ const ProfilePage = () => {
         updateData.picture = previewImage;
       }
 
-      const response = await fetch(`${API}/auth/profile`, {
+      const response = await safeFetch(`${API}/auth/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -189,7 +190,7 @@ const ProfilePage = () => {
     setPasswordSuccess(false);
 
     try {
-      const response = await fetch(`${API}/auth/password`, {
+      const response = await safeFetch(`${API}/auth/password`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -220,7 +221,7 @@ const ProfilePage = () => {
   const handleDeleteAccount = async () => {
     setDeleteLoading(true);
     try {
-      const response = await fetch(`${API}/auth/account`, {
+      const response = await safeFetch(`${API}/auth/account`, {
         method: 'DELETE',
         credentials: 'include'
       });

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { LayoutGrid, Loader2, User, Camera } from 'lucide-react';
 import PublicSightingCard from '../components/PublicSightingCard';
+import safeFetch from '../lib/safeFetch';
 
 const BACKEND_URL = '';
 const API = '/api';
@@ -13,7 +14,7 @@ export default function PublicProfile() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch(`${API}/public/users/${userId}`)
+    safeFetch(`${API}/public/users/${userId}`)
       .then(res => {
         if (!res.ok) throw new Error(res.status === 403 ? 'This profile is private.' : 'Profile not found.');
         return res.json();

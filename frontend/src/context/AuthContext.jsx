@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import safeFetch from '../lib/safeFetch';
 
 const BACKEND_URL = '';
 const API = '/api';
@@ -19,11 +20,11 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch(`${API}/auth/me`, {
+      const response = await safeFetch(`${API}/auth/me`, {
         credentials: 'include'
       });
       if (response.ok) {
-        const userData = await response.clone().json();
+        const userData = await response.json();
         setUser(userData);
       } else {
         setUser(null);
@@ -48,14 +49,14 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    const response = await fetch(`${API}/auth/login`, {
+    const response = await safeFetch(`${API}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({ email, password })
     });
     
-    const data = await response.clone().json();
+    const data = await response.json();
     
     if (!response.ok) {
       throw new Error(data.detail || 'Login failed');
@@ -66,14 +67,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (email, password, name) => {
-    const response = await fetch(`${API}/auth/register`, {
+    const response = await safeFetch(`${API}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({ email, password, name })
     });
     
-    const data = await response.clone().json();
+    const data = await response.json();
     
     if (!response.ok) {
       throw new Error(data.detail || 'Registration failed');
@@ -89,14 +90,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   const exchangeSession = async (sessionId) => {
-    const response = await fetch(`${API}/auth/session`, {
+    const response = await safeFetch(`${API}/auth/session`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({ session_id: sessionId })
     });
     
-    const data = await response.clone().json();
+    const data = await response.json();
     
     if (!response.ok) {
       throw new Error(data.detail || 'Session exchange failed');
@@ -108,7 +109,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await fetch(`${API}/auth/logout`, {
+      await safeFetch(`${API}/auth/logout`, {
         method: 'POST',
         credentials: 'include'
       });

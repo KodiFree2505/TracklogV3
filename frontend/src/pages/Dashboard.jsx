@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import safeFetch from '../lib/safeFetch';
 import { 
   LayoutGrid, LogOut, Camera, BarChart3, MapPin, Clock, User, Loader2,
   Plus, Train, Building2, Calendar, Menu
@@ -96,7 +97,7 @@ const Dashboard = () => {
     const fetchStats = async () => {
       if (!currentUser) return;
       try {
-        const response = await fetch(`${API}/sightings/stats`, {
+        const response = await safeFetch(`${API}/sightings/stats`, {
           credentials: 'include'
         });
         if (response.ok) {

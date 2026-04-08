@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import safeFetch from '../lib/safeFetch';
 import { LayoutGrid, LogOut, User, Loader2, Camera, Plus, Search, Grid, List, Train, MapPin, Calendar, Clock, Trash2, Menu, Zap, Share2, Link2, Globe, Lock, Check } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -73,7 +74,7 @@ const MySightings = () => {
 
   useEffect(() => {
     if (!user) return;
-    fetch(`${API}/sightings`, { credentials: 'include' })
+    safeFetch(`${API}/sightings`, { credentials: 'include' })
       .then(res => res.ok ? res.json() : [])
       .then(data => setSightings(data))
       .catch(() => {})
@@ -85,7 +86,7 @@ const MySightings = () => {
   const handleDelete = () => {
     if (!deleteId) return;
     setDeleting(true);
-    fetch(`${API}/sightings/${deleteId}`, { method: 'DELETE', credentials: 'include' })
+    safeFetch(`${API}/sightings/${deleteId}`, { method: 'DELETE', credentials: 'include' })
       .then(res => { if (res.ok) setSightings(sightings.filter(s => s.sighting_id !== deleteId)); })
       .finally(() => { setDeleting(false); setDeleteId(null); });
   };
@@ -94,7 +95,7 @@ const MySightings = () => {
     e.stopPropagation();
     const newPublic = !currentPublic;
     try {
-      const res = await fetch(`${API}/sightings/${sightingId}/visibility`, {
+      const res = await safeFetch(`${API}/sightings/${sightingId}/visibility`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

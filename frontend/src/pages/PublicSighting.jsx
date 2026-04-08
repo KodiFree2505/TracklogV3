@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { LayoutGrid, Loader2, Train, MapPin, Clock, Calendar, Zap, User, FileText, ExternalLink } from 'lucide-react';
+import safeFetch from '../lib/safeFetch';
 
 const BACKEND_URL = '';
 const API = '/api';
@@ -18,7 +19,7 @@ export default function PublicSighting() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch(`${API}/public/sightings/${shareId}`)
+    safeFetch(`${API}/public/sightings/${shareId}`)
       .then(res => {
         if (!res.ok) throw new Error(res.status === 404 ? 'This sighting is private or does not exist.' : 'Failed to load');
         return res.json();
