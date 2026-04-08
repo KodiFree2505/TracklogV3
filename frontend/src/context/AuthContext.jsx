@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
         credentials: 'include'
       });
       if (response.ok) {
-        const userData = await response.json();
+        const userData = await response.clone().json();
         setUser(userData);
       } else {
         setUser(null);
@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }) => {
       body: JSON.stringify({ email, password })
     });
     
-    const data = await response.json();
+    const data = await response.clone().json();
     
     if (!response.ok) {
       throw new Error(data.detail || 'Login failed');
@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }) => {
       body: JSON.stringify({ email, password, name })
     });
     
-    const data = await response.json();
+    const data = await response.clone().json();
     
     if (!response.ok) {
       throw new Error(data.detail || 'Registration failed');
@@ -96,7 +96,7 @@ export const AuthProvider = ({ children }) => {
       body: JSON.stringify({ session_id: sessionId })
     });
     
-    const data = await response.json();
+    const data = await response.clone().json();
     
     if (!response.ok) {
       throw new Error(data.detail || 'Session exchange failed');
