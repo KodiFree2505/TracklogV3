@@ -152,6 +152,7 @@ export default function LogSighting() {
     setSubmitting(true);
     try {
       const payload = { ...form, photos };
+      console.log('[LogSighting] Submitting payload:', { ...payload, photos: `${payload.photos.length} photos` });
       const res = await fetch(`${API}/sightings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -159,8 +160,12 @@ export default function LogSighting() {
         body: JSON.stringify(payload),
       });
 
+      console.log('[LogSighting] Response status:', res.status);
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
+        const text = await res.text();
+        console.error('[LogSighting] Error response body:', text);
+        let data = {};
+        try { data = JSON.parse(text); } catch(e) {}
         let msg = 'Failed to create sighting';
         if (typeof data.detail === 'string') {
           msg = data.detail;
