@@ -161,7 +161,13 @@ export default function LogSighting() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.detail || 'Failed to create sighting');
+        let msg = 'Failed to create sighting';
+        if (typeof data.detail === 'string') {
+          msg = data.detail;
+        } else if (Array.isArray(data.detail)) {
+          msg = data.detail.map(e => e.msg || e.message || JSON.stringify(e)).join(', ');
+        }
+        throw new Error(msg);
       }
 
       setSuccess(true);

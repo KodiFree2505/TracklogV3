@@ -103,6 +103,7 @@ async def create_sighting(sighting_data: SightingCreate, request: Request):
     }
     
     await db.sightings.insert_one(sighting_doc)
+    sighting_doc.pop("_id", None)
     return SightingResponse(**sighting_doc)
 
 @sightings_router.get("", response_model=List[SightingResponse])
