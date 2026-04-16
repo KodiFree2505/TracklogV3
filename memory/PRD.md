@@ -12,31 +12,36 @@ Create a pixel-perfect clone of https://trainspot-hub.emergent.host/ matching it
 ## What's Been Implemented
 - Pixel-perfect landing page (LandingPage.jsx, HeroSection.jsx, FeaturesSection.jsx)
 - Email/Password + Google OAuth authentication
-- Protected routes (Dashboard, Log Sighting, My Sightings, Profile, Feed)
+- Protected routes (Dashboard, Log Sighting, My Sightings, Profile, Feed, Bookmarks)
 - Comprehensive Dashboard with:
-  - Stats cards (total, this month, locations, last sighting)
-  - Sightings over time (area chart, last 30 days)
-  - Train type and traction type donut charts
-  - Top operators and locations horizontal bar charts
-  - Time-of-day hourly distribution chart
-  - Day-of-week activity chart
-  - Streak tracking (current + best)
-  - Platform-wide stats (total sightings, total users)
-  - AI-powered analytics summary (GPT via emergentintegrations)
-- Log Sighting form with train details, traction type, location/time, photos (FormData + JSON), notes
+  - Stats cards, area charts, donut charts, bar charts, hourly/weekly patterns, streaks, platform stats
+  - **AI Insights with conversational reply** (GPT via emergentintegrations) — generates summary, then user can ask follow-up questions in a mini-chat
+- Log Sighting form with train details, traction type, location/time, photos, notes
 - Public sharing: toggle sightings/profile public, copy shareable links
 - My Sightings gallery/list view with search, delete, share controls, detail modal
 - Profile management (name, picture, password change, profile visibility, delete account)
 - Public pages: /share/sighting/:shareId, /share/user/:userId
-- **Community Feed** (/feed): Authenticated-only page showing all public sightings with search, pagination, and nav
+- **Community Feed** (/feed): Authenticated-only, shows all public sightings with search, pagination
+- **Like & Bookmark system**: Toggle likes/bookmarks on feed cards, like counts, dedicated Bookmarks page
+- **Bookmarks page** (/bookmarks): View and manage saved sightings
+
+## Key API Endpoints
+- POST /api/auth/register, /api/auth/login, GET /api/auth/me
+- POST /api/sightings, GET /api/sightings, GET /api/sightings/stats, GET /api/sightings/analytics
+- POST /api/sightings/{id}/like, POST /api/sightings/{id}/bookmark
+- GET /api/sightings/interactions/me, GET /api/sightings/bookmarks/me
+- GET /api/public/feed, GET /api/public/sightings/{share_id}, GET /api/public/users/{user_id}
+- POST /api/ai/analytics-summary, POST /api/ai/analytics-reply
+
+## DB Collections
+- users, user_sessions, sightings, likes, bookmarks
 
 ## Key Fixes Applied
-- **AI Summary 401 bug**: Fixed auth in ai_summary.py — was querying `users` collection instead of `user_sessions`
-- **"Body is disturbed or locked"**: Created safeFetch (XHR-based) to bypass emergent-main.js fetch monkey-patching
-- **Relative URLs**: All API calls use relative paths (/api/...) for cross-domain compatibility
-- **CORS**: Dynamic from CORS_ORIGINS env var
-- **Google OAuth race condition**: AuthProvider skips checkAuth when session_id in hash
-- **Cookie settings**: Secure + SameSite=lax
+- AI Summary 401: Fixed auth querying wrong collection
+- "Body is disturbed or locked": safeFetch XHR wrapper
+- Relative URLs for cross-domain compatibility
+- Google OAuth race condition fix
+- Route ordering: static paths before /{sighting_id} catch-all
 
 ## Backlog
-- End-to-end multi-user testing for public profile and public sighting sharing (P1)
+- End-to-end multi-user testing for public profile/sighting sharing (P1)

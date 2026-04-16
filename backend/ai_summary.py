@@ -4,6 +4,7 @@ import uuid
 import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -45,6 +46,33 @@ async def get_current_user(request: Request) -> dict:
         raise HTTPException(status_code=401, detail="User not found")
     return user_doc
 
+
+SYSTEM_MESSAGE = (
+    "You are a friendly trainspotting analytics assistant. "
+    "Write concise, insightful summaries about a user's trainspotting activity. "
+    "Use a warm, encouraging tone. Keep responses to 2-4 short paragraphs. "
+    "Do not use markdown headers. Use plain text with occasional emoji for flair. "
+    "When the user asks follow-up questions, answer based on the analytics data "
+    "you were given earlier in this conversation."
+)
+
+
+def _get_api_key():
+    key = os.environ.get("EMERGENT_LLM_KEY")
+    if not key:
+        raise HTTPException(status_code=500, detail="LLM key not configured")
+    return key
+
+
+def _make_chat(session_id: str):
+    from emergentintegrations.llm.chat import LlmChat
+    return LlmChat(
+        api_key=_get_api_key(),
+        session_id=session_id,
+        system_message=SYSTEM_MESSAGE,
+    ).with_model("openai", "gpt-4o-mini")
+
+
 @ai_router.post("/analytics-summary")
 async def generate_analytics_summary(request: Request):
     user = await get_current_user(request)
@@ -56,23 +84,14 @@ async def generate_analytics_summary(request: Request):
     user_name = body.get("user_name", "Trainspotter")
 
     prompt = build_prompt(analytics, stats, user_name)
+    chat_session_id = f"analytics-{user_id}-{uuid.uuid4().hex[:8]}"
 
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        from emergentintegrations.llm.chat import UserMessage
 
-        api_key = os.environ.get("EMERGENT_LLM_KEY")
-        if not api_key:
-            raise HTTPException(status_code=500, detail="LLM key not configured")
-
-        chat = LlmChat(
-            api_key=api_key,
-            session_id=f"analytics-{user_id}-{uuid.uuid4().hex[:8]}",
-            system_message="You are a friendly trainspotting analytics assistant. Write concise, insightful summaries about a user's trainspotting activity. Use a warm, encouraging tone. Keep it to 3-4 short paragraphs. Do not use markdown headers. Use plain text with occasional emoji for flair."
-        ).with_model("openai", "gpt-4o-mini")
-
-        user_message = UserMessage(text=prompt)
-        response = await chat.send_message(user_message)
-        return {"summary": response}
+        chat = _make_chat(chat_session_id)
+        response = await chat.send_message(UserMessage(text=prompt))
+        return {"summary": response, "chat_session_id": chat_session_id}
 
     except ImportError:
         logger.error("emergentintegrations not installed")
@@ -80,6 +99,33 @@ async def generate_analytics_summary(request: Request):
     except Exception as e:
         logger.error(f"AI summary generation failed: {e}")
         raise HTTPException(status_code=500, detail=f"AI generation failed: {str(e)}")
+
+
+class ReplyRequest(BaseModel):
+    chat_session_id: str
+    message: str
+
+
+@ai_router.post("/analytics-reply")
+async def analytics_reply(payload: ReplyRequest, request: Request):
+    await get_current_user(request)
+
+    if not payload.message.strip():
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+
+    try:
+        from emergentintegrations.llm.chat import UserMessage
+
+        chat = _make_chat(payload.chat_session_id)
+        response = await chat.send_message(UserMessage(text=payload.message))
+        return {"reply": response}
+
+    except ImportError:
+        logger.error("emergentintegrations not installed")
+        raise HTTPException(status_code=500, detail="AI service unavailable")
+    except Exception as e:
+        logger.error(f"AI reply failed: {e}")
+        raise HTTPException(status_code=500, detail=f"AI reply failed: {str(e)}")
 
 
 def build_prompt(analytics, stats, user_name):
