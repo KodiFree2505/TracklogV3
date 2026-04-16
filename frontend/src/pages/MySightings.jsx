@@ -2,9 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import safeFetch from '../lib/safeFetch';
-import { LayoutGrid, LogOut, User, Loader2, Camera, Plus, Search, Grid, List, Train, MapPin, Calendar, Clock, Trash2, Menu, Zap, Share2, Link2, Globe, Lock, Check } from 'lucide-react';
+import { LayoutGrid, LogOut, User, Loader2, Camera, Plus, Search, Grid, List, Train, MapPin, Calendar, Clock, Trash2, Menu, Zap, Share2, Link2, Globe, Lock, Check, Pencil } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from '../components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Sheet, SheetContent, SheetTrigger } from '../components/ui/sheet';
@@ -65,6 +70,10 @@ const MySightings = () => {
   const [deleting, setDeleting] = useState(false);
   const [selectedSighting, setSelectedSighting] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
+  const [editSighting, setEditSighting] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState('');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -116,6 +125,52 @@ const MySightings = () => {
       setCopiedId(shareId);
       setTimeout(() => setCopiedId(null), 2000);
     });
+  };
+
+  const openEdit = (e, s) => {
+    e.stopPropagation();
+    setEditForm({
+      train_number: s.train_number || '',
+      train_type: s.train_type || '',
+      traction_type: s.traction_type || '',
+      operator: s.operator || '',
+      route: s.route || '',
+      location: s.location || '',
+      sighting_date: s.sighting_date || '',
+      sighting_time: s.sighting_time || '',
+      notes: s.notes || '',
+    });
+    setEditError('');
+    setEditSighting(s);
+  };
+
+  const handleEditChange = (field, value) => {
+    setEditForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleEditSave = async () => {
+    if (!editSighting) return;
+    setSaving(true);
+    setEditError('');
+    try {
+      const res = await safeFetch(`${API}/sightings/${editSighting.sighting_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(editForm),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.detail || 'Failed to update');
+      }
+      const updated = await res.json();
+      setSightings(prev => prev.map(s => s.sighting_id === editSighting.sighting_id ? { ...s, ...updated } : s));
+      setEditSighting(null);
+    } catch (err) {
+      setEditError(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const filtered = sightings.filter(s => {
@@ -229,6 +284,7 @@ const MySightings = () => {
                             {copiedId === s.share_id ? <Check size={15} className="text-green-400" /> : <Link2 size={15} />}
                           </button>
                         )}
+                        <button onClick={(e) => openEdit(e, s)} className="text-gray-500 hover:text-orange-400 p-1" title="Edit" data-testid={`edit-btn-${s.sighting_id}`}><Pencil size={15} /></button>
                         <button onClick={(e) => { e.stopPropagation(); setDeleteId(s.sighting_id); }} className="text-gray-500 hover:text-red-500 p-1"><Trash2 size={15} /></button>
                       </div>
                     </div>
@@ -264,6 +320,7 @@ const MySightings = () => {
                             {copiedId === s.share_id ? <Check size={15} className="text-green-400" /> : <Link2 size={15} />}
                           </button>
                         )}
+                        <button onClick={(e) => openEdit(e, s)} className="text-gray-500 hover:text-orange-400 p-1" title="Edit"><Pencil size={15} /></button>
                         <button onClick={(e) => { e.stopPropagation(); setDeleteId(s.sighting_id); }} className="text-gray-500 hover:text-red-500 p-1"><Trash2 size={15} /></button>
                       </div>
                     </div>
@@ -395,6 +452,108 @@ const MySightings = () => {
                     )}
                   </button>
                 )}
+                <button
+                  onClick={(e) => { openEdit(e, selectedSighting); setSelectedSighting(null); }}
+                  className="mt-3 w-full flex items-center justify-center gap-2 bg-orange-500/10 border border-orange-500/30 rounded-lg px-4 py-2.5 text-sm text-orange-400 hover:bg-orange-500/20 transition-colors"
+                  data-testid="dialog-edit-btn"
+                >
+                  <Pencil size={16} /> Edit Sighting
+                </button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={editSighting !== null} onOpenChange={() => setEditSighting(null)}>
+        <DialogContent className="bg-[#1a1a1c] border-gray-800 max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+          {editSighting && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-white flex items-center gap-2">
+                  <Pencil size={18} className="text-orange-500" />
+                  Edit Sighting
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-4 mt-2">
+                <div>
+                  <Label className="text-gray-300 text-sm">Train Number</Label>
+                  <Input value={editForm.train_number} onChange={(e) => handleEditChange('train_number', e.target.value)} className="bg-[#0f0f10] border-gray-700 text-white mt-1" data-testid="edit-train-number" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-gray-300 text-sm">Train Type</Label>
+                    <Select value={editForm.train_type} onValueChange={(v) => handleEditChange('train_type', v)}>
+                      <SelectTrigger className="bg-[#0f0f10] border-gray-700 text-white mt-1" data-testid="edit-train-type">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#1a1a1c] border-gray-700">
+                        {['Passenger','Freight','High-Speed','Commuter','Metro/Subway','Light Rail','Heritage/Steam','Other'].map(t => (
+                          <SelectItem key={t} value={t} className="text-white hover:bg-gray-800">{t}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-gray-300 text-sm">Traction Type</Label>
+                    <Select value={editForm.traction_type} onValueChange={(v) => handleEditChange('traction_type', v)}>
+                      <SelectTrigger className="bg-[#0f0f10] border-gray-700 text-white mt-1" data-testid="edit-traction-type">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#1a1a1c] border-gray-700">
+                        {['Electric','Diesel','Steam','Diesel-Electric','Hybrid','Battery','Hydrogen','Other'].map(t => (
+                          <SelectItem key={t} value={t} className="text-white hover:bg-gray-800">{t}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-gray-300 text-sm">Operator</Label>
+                  <Input value={editForm.operator} onChange={(e) => handleEditChange('operator', e.target.value)} className="bg-[#0f0f10] border-gray-700 text-white mt-1" data-testid="edit-operator" />
+                </div>
+
+                <div>
+                  <Label className="text-gray-300 text-sm">Route</Label>
+                  <Input value={editForm.route} onChange={(e) => handleEditChange('route', e.target.value)} className="bg-[#0f0f10] border-gray-700 text-white mt-1" data-testid="edit-route" />
+                </div>
+
+                <div>
+                  <Label className="text-gray-300 text-sm">Location</Label>
+                  <Input value={editForm.location} onChange={(e) => handleEditChange('location', e.target.value)} className="bg-[#0f0f10] border-gray-700 text-white mt-1" data-testid="edit-location" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-gray-300 text-sm">Date</Label>
+                    <Input type="date" value={editForm.sighting_date} onChange={(e) => handleEditChange('sighting_date', e.target.value)} className="bg-[#0f0f10] border-gray-700 text-white mt-1" data-testid="edit-date" />
+                  </div>
+                  <div>
+                    <Label className="text-gray-300 text-sm">Time</Label>
+                    <Input type="time" value={editForm.sighting_time} onChange={(e) => handleEditChange('sighting_time', e.target.value)} className="bg-[#0f0f10] border-gray-700 text-white mt-1" data-testid="edit-time" />
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-gray-300 text-sm">Notes</Label>
+                  <Textarea value={editForm.notes} onChange={(e) => handleEditChange('notes', e.target.value)} className="bg-[#0f0f10] border-gray-700 text-white mt-1 min-h-[80px]" data-testid="edit-notes" />
+                </div>
+
+                {editError && <p className="text-red-400 text-sm">{editError}</p>}
+
+                <div className="flex gap-3 pt-2">
+                  <Button variant="outline" onClick={() => setEditSighting(null)} className="flex-1 border-gray-700 text-gray-300 hover:bg-gray-800">
+                    Cancel
+                  </Button>
+                  <Button onClick={handleEditSave} disabled={saving} className="flex-1 bg-[#e34c26] hover:bg-[#d14020] text-white" data-testid="edit-save-btn">
+                    {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                    Save Changes
+                  </Button>
+                </div>
               </div>
             </>
           )}

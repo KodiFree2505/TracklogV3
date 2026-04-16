@@ -458,6 +458,44 @@ async def delete_sighting(sighting_id: str, request: Request):
 class VisibilityUpdate(BaseModel):
     is_public: bool
 
+
+class SightingUpdate(BaseModel):
+    train_number: Optional[str] = None
+    train_type: Optional[str] = None
+    traction_type: Optional[str] = None
+    operator: Optional[str] = None
+    route: Optional[str] = None
+    location: Optional[str] = None
+    sighting_date: Optional[str] = None
+    sighting_time: Optional[str] = None
+    notes: Optional[str] = None
+
+
+@sightings_router.put("/{sighting_id}")
+async def update_sighting(sighting_id: str, data: SightingUpdate, request: Request):
+    user_id = await get_current_user_id(request)
+    sighting = await db.sightings.find_one(
+        {"sighting_id": sighting_id, "user_id": user_id}, {"_id": 0}
+    )
+    if not sighting:
+        raise HTTPException(status_code=404, detail="Sighting not found")
+
+    update_fields = {}
+    for field, value in data.model_dump(exclude_unset=True).items():
+        if value is not None:
+            update_fields[field] = value
+
+    if not update_fields:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    await db.sightings.update_one(
+        {"sighting_id": sighting_id},
+        {"$set": update_fields},
+    )
+    updated = await db.sightings.find_one({"sighting_id": sighting_id}, {"_id": 0})
+    return SightingResponse(**updated)
+
+
 @sightings_router.put("/{sighting_id}/visibility")
 async def toggle_sighting_visibility(sighting_id: str, data: VisibilityUpdate, request: Request):
     user_id = await get_current_user_id(request)
