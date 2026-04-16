@@ -14,6 +14,7 @@ import DonutChart from '../components/analytics/DonutChart';
 import { HourlyChart, DayOfWeekChart } from '../components/analytics/PatternCharts';
 import { StreakCard, PlatformStats } from '../components/analytics/StatsCards';
 import AiSummary from '../components/analytics/AiSummary';
+import NotificationBell from '../components/NotificationBell';
 
 const BACKEND_URL = '';
 const API = '/api';
@@ -133,6 +134,9 @@ const Dashboard = () => {
           <Link to="/bookmarks" className="text-gray-600 text-sm hover:text-gray-900">Bookmarks</Link>
         </nav>
         <div className="flex items-center gap-2 md:gap-4">
+          <div className="hidden md:block">
+            <NotificationBell />
+          </div>
           <Link to="/profile" className="hidden md:flex items-center gap-2 hover:opacity-80">
             {currentUser?.picture ? (
               <img src={currentUser.picture} alt={currentUser.name} className="w-8 h-8 rounded-full object-cover" />

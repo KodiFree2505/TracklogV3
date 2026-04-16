@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '../components/ui/sheet';
+import NotificationBell from '../components/NotificationBell';
 
 const API = '/api';
 
@@ -173,6 +174,9 @@ export default function BookmarksPage() {
           <Link to="/bookmarks" className="text-gray-800 font-medium text-sm">Bookmarks</Link>
         </nav>
         <div className="flex items-center gap-2 md:gap-4">
+          <div className="hidden md:block">
+            <NotificationBell />
+          </div>
           <Link to="/profile" className="hidden md:flex items-center gap-2 hover:opacity-80">
             {user?.picture ? (
               <img src={user.picture} alt={user.name} className="w-8 h-8 rounded-full object-cover" />

@@ -478,7 +478,9 @@ async def toggle_sighting_visibility(sighting_id: str, data: VisibilityUpdate, r
 
 @sightings_router.post("/{sighting_id}/like")
 async def toggle_like(sighting_id: str, request: Request):
-    user_id = await get_current_user_id(request)
+    from auth import get_current_user
+    user = await get_current_user(request)
+    user_id = user["user_id"]
     existing = await db.likes.find_one({"user_id": user_id, "sighting_id": sighting_id})
     if existing:
         await db.likes.delete_one({"user_id": user_id, "sighting_id": sighting_id})
@@ -495,13 +497,26 @@ async def toggle_like(sighting_id: str, request: Request):
             {"$inc": {"like_count": 1}},
         )
         liked = True
+        # Notify sighting owner
+        sighting_doc = await db.sightings.find_one({"sighting_id": sighting_id}, {"_id": 0, "user_id": 1, "train_number": 1})
+        if sighting_doc:
+            from social import create_notification
+            await create_notification(
+                user_id=sighting_doc["user_id"],
+                notif_type="like",
+                actor_id=user_id,
+                sighting_id=sighting_id,
+                message=f"{user.get('name', 'Someone')} liked your sighting of {sighting_doc.get('train_number', 'a train')}",
+            )
     doc = await db.sightings.find_one({"sighting_id": sighting_id}, {"_id": 0, "like_count": 1})
     return {"liked": liked, "like_count": max((doc or {}).get("like_count", 0), 0)}
 
 
 @sightings_router.post("/{sighting_id}/bookmark")
 async def toggle_bookmark(sighting_id: str, request: Request):
-    user_id = await get_current_user_id(request)
+    from auth import get_current_user
+    user = await get_current_user(request)
+    user_id = user["user_id"]
     existing = await db.bookmarks.find_one({"user_id": user_id, "sighting_id": sighting_id})
     if existing:
         await db.bookmarks.delete_one({"user_id": user_id, "sighting_id": sighting_id})
@@ -513,4 +528,15 @@ async def toggle_bookmark(sighting_id: str, request: Request):
             "created_at": datetime.now(timezone.utc),
         })
         bookmarked = True
+        # Notify sighting owner
+        sighting_doc = await db.sightings.find_one({"sighting_id": sighting_id}, {"_id": 0, "user_id": 1, "train_number": 1})
+        if sighting_doc:
+            from social import create_notification
+            await create_notification(
+                user_id=sighting_doc["user_id"],
+                notif_type="bookmark",
+                actor_id=user_id,
+                sighting_id=sighting_id,
+                message=f"{user.get('name', 'Someone')} bookmarked your sighting of {sighting_doc.get('train_number', 'a train')}",
+            )
     return {"bookmarked": bookmarked}

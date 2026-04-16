@@ -4,10 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import safeFetch from '../lib/safeFetch';
 import {
   LayoutGrid, Search, Loader2, ChevronLeft, ChevronRight, Train, MapPin,
-  User, Calendar, Zap, LogOut, Menu, Plus, Heart, Bookmark
+  User, Calendar, Zap, LogOut, Menu, Plus, Heart, Bookmark, UserPlus, UserCheck
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '../components/ui/sheet';
+import NotificationBell from '../components/NotificationBell';
 
 const API = '/api';
 
@@ -17,9 +18,10 @@ function getPhotoUrl(photo) {
   return photo;
 }
 
-function FeedCard({ sighting, liked, bookmarked, onLike, onBookmark }) {
+function FeedCard({ sighting, liked, bookmarked, isFollowing, onLike, onBookmark, onFollow, currentUserId }) {
   const photo = sighting.photos?.[0] ? getPhotoUrl(sighting.photos[0]) : null;
   const photoCount = sighting.photos?.length || 0;
+  const isOwnSighting = sighting.owner_id === currentUserId;
 
   return (
     <div
@@ -42,15 +44,31 @@ function FeedCard({ sighting, liked, bookmarked, onLike, onBookmark }) {
       </Link>
 
       <div className="p-4">
-        <div className="flex items-center gap-2 mb-3">
-          {sighting.owner_picture ? (
-            <img src={sighting.owner_picture.startsWith('/api') ? sighting.owner_picture : sighting.owner_picture} alt="" className="w-6 h-6 rounded-full object-cover" />
-          ) : (
-            <div className="w-6 h-6 rounded-full bg-orange-600 flex items-center justify-center">
-              <User size={12} className="text-white" />
-            </div>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2 min-w-0">
+            {sighting.owner_picture ? (
+              <img src={sighting.owner_picture.startsWith('/api') ? sighting.owner_picture : sighting.owner_picture} alt="" className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
+            ) : (
+              <div className="w-6 h-6 rounded-full bg-orange-600 flex items-center justify-center flex-shrink-0">
+                <User size={12} className="text-white" />
+              </div>
+            )}
+            <span className="text-gray-400 text-xs truncate">{sighting.owner_name}</span>
+          </div>
+          {!isOwnSighting && (
+            <button
+              onClick={() => onFollow(sighting.owner_id)}
+              className={`flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded-full transition-colors flex-shrink-0 ${
+                isFollowing
+                  ? 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  : 'bg-orange-500/15 text-orange-400 hover:bg-orange-500/25'
+              }`}
+              data-testid={`follow-btn-${sighting.owner_id}`}
+            >
+              {isFollowing ? <UserCheck size={11} /> : <UserPlus size={11} />}
+              {isFollowing ? 'Following' : 'Follow'}
+            </button>
           )}
-          <span className="text-gray-400 text-xs truncate">{sighting.owner_name}</span>
         </div>
 
         <Link to={`/share/sighting/${sighting.share_id}`}>
@@ -149,12 +167,13 @@ export default function PublicFeed() {
   const [total, setTotal] = useState(0);
   const [likedIds, setLikedIds] = useState(new Set());
   const [bookmarkedIds, setBookmarkedIds] = useState(new Set());
+  const [followingIds, setFollowingIds] = useState(new Set());
 
   useEffect(() => {
     if (!authLoading && !user) navigate('/auth');
   }, [authLoading, user, navigate]);
 
-  // Fetch interactions
+  // Fetch interactions + following
   useEffect(() => {
     if (!user) return;
     safeFetch(`${API}/sightings/interactions/me`, { credentials: 'include' })
@@ -164,6 +183,12 @@ export default function PublicFeed() {
           setLikedIds(new Set(data.liked_ids || []));
           setBookmarkedIds(new Set(data.bookmarked_ids || []));
         }
+      })
+      .catch(() => {});
+    safeFetch(`${API}/social/following/me`, { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data) setFollowingIds(new Set(data.following_ids || []));
       })
       .catch(() => {});
   }, [user]);
@@ -213,6 +238,17 @@ export default function PublicFeed() {
     });
   };
 
+  const handleFollow = async (targetUserId) => {
+    const res = await safeFetch(`${API}/social/follow/${targetUserId}`, { method: 'POST', credentials: 'include' });
+    if (!res.ok) return;
+    const data = await res.json();
+    setFollowingIds(prev => {
+      const next = new Set(prev);
+      data.following ? next.add(targetUserId) : next.delete(targetUserId);
+      return next;
+    });
+  };
+
   const handleLogout = async () => { await logout(); navigate('/'); };
 
   if (authLoading || !user) {
@@ -238,6 +274,9 @@ export default function PublicFeed() {
           <Link to="/bookmarks" className="text-gray-600 text-sm hover:text-gray-900">Bookmarks</Link>
         </nav>
         <div className="flex items-center gap-2 md:gap-4">
+          <div className="hidden md:block">
+            <NotificationBell />
+          </div>
           <Link to="/profile" className="hidden md:flex items-center gap-2 hover:opacity-80">
             {user?.picture ? (
               <img src={user.picture} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
@@ -315,8 +354,11 @@ export default function PublicFeed() {
                   sighting={s}
                   liked={likedIds.has(s.sighting_id)}
                   bookmarked={bookmarkedIds.has(s.sighting_id)}
+                  isFollowing={followingIds.has(s.owner_id)}
                   onLike={handleLike}
                   onBookmark={handleBookmark}
+                  onFollow={handleFollow}
+                  currentUserId={user?.user_id}
                 />
               ))}
             </div>
