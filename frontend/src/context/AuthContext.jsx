@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const checkAuth = async () => {
+  const checkAuth = async (retries = 1) => {
     try {
       const response = await safeFetch(`${API}/auth/me`, {
         credentials: 'include'
@@ -30,6 +30,10 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
       }
     } catch (error) {
+      if (retries > 0) {
+        await new Promise(r => setTimeout(r, 1000));
+        return checkAuth(retries - 1);
+      }
       console.error('Auth check failed:', error);
       setUser(null);
     } finally {
@@ -46,6 +50,7 @@ export const AuthProvider = ({ children }) => {
       return;
     }
     checkAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const login = async (email, password) => {

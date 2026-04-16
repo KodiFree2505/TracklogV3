@@ -5,6 +5,7 @@ export default function safeFetch(url, options = {}) {
     const xhr = new XMLHttpRequest();
     xhr.open(options.method || 'GET', url, true);
     xhr.withCredentials = true;
+    xhr.timeout = 15000; // 15s timeout prevents pages from hanging
 
     // Set headers
     if (options.headers) {
@@ -14,12 +15,18 @@ export default function safeFetch(url, options = {}) {
     }
 
     xhr.onload = function () {
-      // Build a Response-like object
       resolve({
         ok: xhr.status >= 200 && xhr.status < 300,
         status: xhr.status,
         statusText: xhr.statusText,
-        json: () => Promise.resolve(JSON.parse(xhr.responseText)),
+        json: () =>
+          new Promise((res, rej) => {
+            try {
+              res(JSON.parse(xhr.responseText));
+            } catch (e) {
+              rej(e);
+            }
+          }),
         text: () => Promise.resolve(xhr.responseText),
       });
     };
@@ -30,6 +37,10 @@ export default function safeFetch(url, options = {}) {
 
     xhr.ontimeout = function () {
       reject(new TypeError('Network request timed out'));
+    };
+
+    xhr.onabort = function () {
+      reject(new TypeError('Network request aborted'));
     };
 
     xhr.send(options.body || null);
