@@ -91,6 +91,42 @@ async def get_my_following(request: Request):
     return {"following_ids": [d["following_id"] for d in docs]}
 
 
+@social_router.get("/users/search")
+async def search_users(q: str = "", page: int = 1, limit: int = 20):
+    skip = (page - 1) * limit
+    query = {"is_profile_public": True}
+    if q:
+        query["name"] = {"$regex": q, "$options": "i"}
+
+    total = await db.users.count_documents(query)
+    users = await db.users.find(
+        query, {"_id": 0, "password_hash": 0}
+    ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+
+    results = []
+    for u in users:
+        uid = u["user_id"]
+        follower_count = await db.follows.count_documents({"following_id": uid})
+        following_count = await db.follows.count_documents({"follower_id": uid})
+        sighting_count = await db.sightings.count_documents({"user_id": uid, "is_public": True})
+        results.append({
+            "user_id": uid,
+            "name": u.get("name", "Unknown"),
+            "picture": u.get("picture"),
+            "follower_count": follower_count,
+            "following_count": following_count,
+            "sighting_count": sighting_count,
+            "created_at": u["created_at"].isoformat() if hasattr(u.get("created_at"), "isoformat") else str(u.get("created_at", "")),
+        })
+
+    return {
+        "users": results,
+        "total": total,
+        "page": page,
+        "pages": (total + limit - 1) // limit if limit else 1,
+    }
+
+
 @social_router.get("/followers/{user_id}")
 async def get_follower_count(user_id: str):
     count = await db.follows.count_documents({"following_id": user_id})

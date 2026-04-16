@@ -13,6 +13,7 @@ import PublicSighting from "./pages/PublicSighting";
 import PublicProfile from "./pages/PublicProfile";
 import PublicFeed from "./pages/PublicFeed";
 import BookmarksPage from "./pages/BookmarksPage";
+import DiscoverPage from "./pages/DiscoverPage";
 
 // Router component that checks for session_id in URL hash
 function AppRouter() {
@@ -30,6 +31,7 @@ function AppRouter() {
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/feed" element={<PublicFeed />} />
       <Route path="/bookmarks" element={<BookmarksPage />} />
+      <Route path="/discover" element={<DiscoverPage />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/log-sighting" element={<LogSighting />} />
       <Route path="/sightings" element={<MySightings />} />

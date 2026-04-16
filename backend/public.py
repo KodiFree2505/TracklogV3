@@ -33,6 +33,9 @@ class PublicProfileResponse(BaseModel):
     name: str
     picture: Optional[str] = None
     total_sightings: int
+    follower_count: int = 0
+    following_count: int = 0
+    member_since: Optional[str] = None
     sightings: List[PublicSightingResponse] = []
 
 @public_router.get("/feed")
@@ -130,6 +133,14 @@ async def get_public_profile(user_id: str):
     if not user.get("is_profile_public", False):
         raise HTTPException(status_code=403, detail="This profile is private")
 
+    follower_count = await db.follows.count_documents({"following_id": user_id})
+    following_count = await db.follows.count_documents({"follower_id": user_id})
+    member_since = ""
+    if hasattr(user.get("created_at"), "strftime"):
+        member_since = user["created_at"].strftime("%b %Y")
+    elif user.get("created_at"):
+        member_since = str(user["created_at"])[:7]
+
     sightings = await db.sightings.find(
         {"user_id": user_id, "is_public": True}, {"_id": 0}
     ).sort("created_at", -1).to_list(100)
@@ -159,5 +170,8 @@ async def get_public_profile(user_id: str):
         name=user["name"],
         picture=user.get("picture"),
         total_sightings=len(sighting_responses),
+        follower_count=follower_count,
+        following_count=following_count,
+        member_since=member_since,
         sightings=sighting_responses,
     )

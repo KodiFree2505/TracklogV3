@@ -52,6 +52,7 @@ const MobileNav = ({ user, onLogout }) => (
         <Link to="/sightings" className="text-gray-300 hover:text-white py-2">My Sightings</Link>
         <Link to="/log-sighting" className="text-gray-300 hover:text-white py-2">Log Sighting</Link>
         <Link to="/feed" className="text-gray-300 hover:text-white py-2">Feed</Link>
+        <Link to="/discover" className="text-gray-300 hover:text-white py-2">Discover</Link>
         <Link to="/bookmarks" className="text-gray-300 hover:text-white py-2">Bookmarks</Link>
         <Link to="/profile" className="text-gray-300 hover:text-white py-2">Profile</Link>
         <button onClick={onLogout} className="text-red-400 hover:text-red-300 py-2 text-left mt-4">
@@ -131,6 +132,7 @@ const Dashboard = () => {
           <Link to="/sightings" className="text-gray-600 text-sm hover:text-gray-900">My Sightings</Link>
           <Link to="/log-sighting" className="text-gray-600 text-sm hover:text-gray-900">Log Sighting</Link>
           <Link to="/feed" className="text-gray-600 text-sm hover:text-gray-900">Feed</Link>
+          <Link to="/discover" className="text-gray-600 text-sm hover:text-gray-900">Discover</Link>
           <Link to="/bookmarks" className="text-gray-600 text-sm hover:text-gray-900">Bookmarks</Link>
         </nav>
         <div className="flex items-center gap-2 md:gap-4">
