@@ -180,7 +180,7 @@ export default function DiscoverPage() {
           <Link to="/bookmarks" className="text-gray-600 text-sm hover:text-gray-900">Bookmarks</Link>
         </nav>
         <div className="flex items-center gap-2 md:gap-4">
-          <div className="hidden md:block"><NotificationBell /></div>
+          <NotificationBell />
           <Link to="/profile" className="hidden md:flex items-center gap-2 hover:opacity-80">
             {user?.picture ? (
               <img src={user.picture} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
