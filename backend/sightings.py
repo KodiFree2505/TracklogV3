@@ -363,6 +363,65 @@ async def get_analytics(request: Request):
         "platform": {"total_sightings": all_count, "total_users": all_users},
     }
 
+
+# ── Like / Bookmark (static paths MUST come before /{sighting_id}) ──
+
+@sightings_router.get("/interactions/me")
+async def get_my_interactions(request: Request):
+    user_id = await get_current_user_id(request)
+    liked = await db.likes.find({"user_id": user_id}, {"_id": 0, "sighting_id": 1}).to_list(5000)
+    bookmarked = await db.bookmarks.find({"user_id": user_id}, {"_id": 0, "sighting_id": 1}).to_list(5000)
+    return {
+        "liked_ids": [l["sighting_id"] for l in liked],
+        "bookmarked_ids": [b["sighting_id"] for b in bookmarked],
+    }
+
+
+@sightings_router.get("/bookmarks/me")
+async def get_my_bookmarks(request: Request):
+    user_id = await get_current_user_id(request)
+    bookmarks = await db.bookmarks.find(
+        {"user_id": user_id}, {"_id": 0}
+    ).sort("created_at", -1).to_list(500)
+    sighting_ids = [b["sighting_id"] for b in bookmarks]
+    if not sighting_ids:
+        return {"sightings": []}
+    sightings = await db.sightings.find(
+        {"sighting_id": {"$in": sighting_ids}}, {"_id": 0}
+    ).to_list(500)
+    sid_map = {s["sighting_id"]: s for s in sightings}
+    user_ids = list(set(s["user_id"] for s in sightings))
+    users = await db.users.find({"user_id": {"$in": user_ids}}, {"_id": 0, "password_hash": 0}).to_list(len(user_ids))
+    users_map = {u["user_id"]: u for u in users}
+    results = []
+    for sid in sighting_ids:
+        s = sid_map.get(sid)
+        if not s:
+            continue
+        owner = users_map.get(s["user_id"], {})
+        results.append({
+            "sighting_id": s["sighting_id"],
+            "share_id": s.get("share_id", ""),
+            "train_number": s["train_number"],
+            "train_type": s["train_type"],
+            "traction_type": s.get("traction_type"),
+            "operator": s["operator"],
+            "route": s.get("route"),
+            "location": s["location"],
+            "sighting_date": s["sighting_date"],
+            "sighting_time": s["sighting_time"],
+            "notes": s.get("notes"),
+            "photos": s.get("photos", []),
+            "like_count": max(s.get("like_count", 0), 0),
+            "created_at": s["created_at"].isoformat() if hasattr(s.get("created_at"), "isoformat") else str(s.get("created_at", "")),
+            "owner_name": owner.get("name", "Unknown"),
+            "owner_picture": owner.get("picture"),
+        })
+    return {"sightings": results}
+
+
+# ── Dynamic /{sighting_id} routes ────────────────────────────────
+
 @sightings_router.get("/{sighting_id}", response_model=SightingResponse)
 async def get_sighting(sighting_id: str, request: Request):
     user_id = await get_current_user_id(request)
@@ -413,3 +472,45 @@ async def toggle_sighting_visibility(sighting_id: str, data: VisibilityUpdate, r
         {"$set": {"is_public": data.is_public}}
     )
     return {"message": "Visibility updated", "is_public": data.is_public}
+
+
+# ── Like / Bookmark ──────────────────────────────────────────────
+
+@sightings_router.post("/{sighting_id}/like")
+async def toggle_like(sighting_id: str, request: Request):
+    user_id = await get_current_user_id(request)
+    existing = await db.likes.find_one({"user_id": user_id, "sighting_id": sighting_id})
+    if existing:
+        await db.likes.delete_one({"user_id": user_id, "sighting_id": sighting_id})
+        await db.sightings.update_one({"sighting_id": sighting_id}, {"$inc": {"like_count": -1}})
+        liked = False
+    else:
+        await db.likes.insert_one({
+            "user_id": user_id,
+            "sighting_id": sighting_id,
+            "created_at": datetime.now(timezone.utc),
+        })
+        await db.sightings.update_one(
+            {"sighting_id": sighting_id},
+            {"$inc": {"like_count": 1}},
+        )
+        liked = True
+    doc = await db.sightings.find_one({"sighting_id": sighting_id}, {"_id": 0, "like_count": 1})
+    return {"liked": liked, "like_count": max((doc or {}).get("like_count", 0), 0)}
+
+
+@sightings_router.post("/{sighting_id}/bookmark")
+async def toggle_bookmark(sighting_id: str, request: Request):
+    user_id = await get_current_user_id(request)
+    existing = await db.bookmarks.find_one({"user_id": user_id, "sighting_id": sighting_id})
+    if existing:
+        await db.bookmarks.delete_one({"user_id": user_id, "sighting_id": sighting_id})
+        bookmarked = False
+    else:
+        await db.bookmarks.insert_one({
+            "user_id": user_id,
+            "sighting_id": sighting_id,
+            "created_at": datetime.now(timezone.utc),
+        })
+        bookmarked = True
+    return {"bookmarked": bookmarked}

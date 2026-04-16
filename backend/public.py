@@ -73,6 +73,7 @@ async def get_public_feed(page: int = 1, limit: int = 20, search: str = ""):
             "sighting_time": s["sighting_time"],
             "notes": s.get("notes"),
             "photos": s.get("photos", []),
+            "like_count": max(s.get("like_count", 0), 0),
             "created_at": s["created_at"].isoformat() if hasattr(s.get("created_at"), 'isoformat') else str(s.get("created_at", "")),
             "owner_name": owner.get("name", "Unknown"),
             "owner_picture": owner.get("picture"),
