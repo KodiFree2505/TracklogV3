@@ -72,6 +72,8 @@ const MySightings = () => {
   const [copiedId, setCopiedId] = useState(null);
   const [editSighting, setEditSighting] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [editPhotos, setEditPhotos] = useState([]);
+  const [newPhotos, setNewPhotos] = useState([]);
   const [saving, setSaving] = useState(false);
   const [editError, setEditError] = useState('');
 
@@ -140,6 +142,8 @@ const MySightings = () => {
       sighting_time: s.sighting_time || '',
       notes: s.notes || '',
     });
+    setEditPhotos((s.photos || []).filter(Boolean));
+    setNewPhotos([]);
     setEditError('');
     setEditSighting(s);
   };
@@ -148,16 +152,40 @@ const MySightings = () => {
     setEditForm(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleRemoveExistingPhoto = (idx) => {
+    setEditPhotos(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleRemoveNewPhoto = (idx) => {
+    setNewPhotos(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleAddPhotos = (e) => {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setNewPhotos(prev => [...prev, { base64: ev.target.result, name: file.name }]);
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  };
+
   const handleEditSave = async () => {
     if (!editSighting) return;
     setSaving(true);
     setEditError('');
     try {
+      const photos = [
+        ...editPhotos,
+        ...newPhotos.map(p => p.base64),
+      ];
       const res = await safeFetch(`${API}/sightings/${editSighting.sighting_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(editForm),
+        body: JSON.stringify({ ...editForm, photos }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -541,6 +569,45 @@ const MySightings = () => {
                 <div>
                   <Label className="text-gray-300 text-sm">Notes</Label>
                   <Textarea value={editForm.notes} onChange={(e) => handleEditChange('notes', e.target.value)} className="bg-[#0f0f10] border-gray-700 text-white mt-1 min-h-[80px]" data-testid="edit-notes" />
+                </div>
+
+                {/* Photos */}
+                <div>
+                  <Label className="text-gray-300 text-sm mb-2 block">Photos</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {editPhotos.map((photo, idx) => (
+                      <div key={`existing-${idx}`} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-700 group/photo">
+                        <img src={photo} alt="" className="w-full h-full object-cover" />
+                        <button
+                          onClick={() => handleRemoveExistingPhoto(idx)}
+                          type="button"
+                          className="absolute inset-0 bg-black/60 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center"
+                          data-testid={`remove-photo-${idx}`}
+                        >
+                          <Trash2 size={16} className="text-red-400" />
+                        </button>
+                      </div>
+                    ))}
+                    {newPhotos.map((photo, idx) => (
+                      <div key={`new-${idx}`} className="relative w-20 h-20 rounded-lg overflow-hidden border border-orange-500/50 group/photo">
+                        <img src={photo.base64} alt="" className="w-full h-full object-cover" />
+                        <button
+                          onClick={() => handleRemoveNewPhoto(idx)}
+                          type="button"
+                          className="absolute inset-0 bg-black/60 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center"
+                        >
+                          <Trash2 size={16} className="text-red-400" />
+                        </button>
+                        <span className="absolute bottom-0 left-0 right-0 bg-orange-500/80 text-[9px] text-white text-center py-0.5">New</span>
+                      </div>
+                    ))}
+                    <label className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-700 hover:border-orange-500/50 flex flex-col items-center justify-center cursor-pointer transition-colors" data-testid="edit-add-photo">
+                      <Camera size={18} className="text-gray-500" />
+                      <span className="text-gray-500 text-[10px] mt-1">Add</span>
+                      <input type="file" accept="image/*" multiple onChange={handleAddPhotos} className="hidden" />
+                    </label>
+                  </div>
+                  <p className="text-gray-500 text-[11px] mt-1.5">{editPhotos.length + newPhotos.length} photo{editPhotos.length + newPhotos.length !== 1 ? 's' : ''} — hover to remove</p>
                 </div>
 
                 {editError && <p className="text-red-400 text-sm">{editError}</p>}

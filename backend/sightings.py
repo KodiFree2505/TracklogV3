@@ -469,6 +469,7 @@ class SightingUpdate(BaseModel):
     sighting_date: Optional[str] = None
     sighting_time: Optional[str] = None
     notes: Optional[str] = None
+    photos: Optional[List[str]] = None
 
 
 @sightings_router.put("/{sighting_id}")
@@ -481,7 +482,49 @@ async def update_sighting(sighting_id: str, data: SightingUpdate, request: Reque
         raise HTTPException(status_code=404, detail="Sighting not found")
 
     update_fields = {}
-    for field, value in data.model_dump(exclude_unset=True).items():
+    upload_dir = "/app/backend/uploads"
+    os.makedirs(upload_dir, exist_ok=True)
+
+    dumped = data.model_dump(exclude_unset=True)
+
+    # Handle photos separately
+    if "photos" in dumped and dumped["photos"] is not None:
+        incoming = dumped.pop("photos")
+        old_photos = set(sighting.get("photos", []))
+        kept = []
+        new_saved = []
+
+        for photo in incoming:
+            if photo.startswith("data:image"):
+                # New base64 photo
+                try:
+                    header, b64data = photo.split(",", 1)
+                    ext = "jpg" if "jpeg" in header else "png"
+                    filename = f"{sighting_id}_{uuid.uuid4().hex[:6]}.{ext}"
+                    filepath = os.path.join(upload_dir, filename)
+                    with open(filepath, "wb") as f:
+                        f.write(base64.b64decode(b64data))
+                    new_saved.append(f"/api/uploads/{filename}")
+                except Exception as e:
+                    logger.error(f"Error saving new photo: {e}")
+            elif photo:
+                kept.append(photo)
+
+        # Delete removed photos from disk
+        removed = old_photos - set(kept)
+        for photo in removed:
+            if photo.startswith("/api/uploads/"):
+                filename = photo.replace("/api/uploads/", "")
+                filepath = os.path.join(upload_dir, filename)
+                if os.path.exists(filepath):
+                    try:
+                        os.remove(filepath)
+                    except Exception:
+                        pass
+
+        update_fields["photos"] = kept + new_saved
+
+    for field, value in dumped.items():
         if value is not None:
             update_fields[field] = value
 

@@ -15,7 +15,7 @@ Create a pixel-perfect clone of TrackLog matching its design, layout, colors, fo
 - Protected routes: Dashboard, Log Sighting, My Sightings, Profile, Feed, Bookmarks, Discover
 - Dashboard: stats, charts (recharts), AI Insights with conversational reply (GPT)
 - Log Sighting form with photos, traction type
-- **Edit Sighting**: inline edit dialog from My Sightings (train number, type, traction, operator, route, location, date, time, notes) + edit button in detail modal
+- **Edit Sighting with photo management**: inline edit dialog with add/remove photos (base64 upload), remove existing photos (deletes from disk), plus all text fields
 - Public sharing: toggle sightings/profile public, shareable links
 - My Sightings gallery/list with search, delete, share, edit controls
 - Profile management (name, picture, password, visibility, delete)
@@ -28,7 +28,7 @@ Create a pixel-perfect clone of TrackLog matching its design, layout, colors, fo
 
 ## Key API Endpoints
 - Auth: POST /api/auth/register, /login, GET /me, PUT /profile, /password, /profile/visibility
-- Sightings: POST /api/sightings, GET, PUT /{id}, DELETE /{id}, /stats, /analytics, /interactions/me, /bookmarks/me
+- Sightings: POST /api/sightings, GET, PUT /{id} (with photos support), DELETE /{id}, /stats, /analytics, /interactions/me, /bookmarks/me
 - Like/Bookmark: POST /api/sightings/{id}/like, /bookmark
 - Public: GET /api/public/feed, /sightings/{share_id}, /users/{user_id}
 - Social: POST /api/social/follow/{id}, GET /following/me, /users/search, /notifications, /notifications/unread-count, PUT /notifications/read
