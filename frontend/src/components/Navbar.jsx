@@ -20,12 +20,6 @@ const Navbar = () => {
         {/* Navigation Links */}
         <div className="flex items-center gap-3 md:gap-6">
           <a 
-            href="/feed" 
-            className="text-gray-800 hover:text-gray-900 font-medium text-sm transition-colors"
-          >
-            Feed
-          </a>
-          <a 
             href="/auth" 
             className="text-gray-800 hover:text-gray-900 font-medium text-sm transition-colors"
           >

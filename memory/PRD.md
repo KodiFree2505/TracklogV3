@@ -12,7 +12,7 @@ Create a pixel-perfect clone of https://trainspot-hub.emergent.host/ matching it
 ## What's Been Implemented
 - Pixel-perfect landing page (LandingPage.jsx, HeroSection.jsx, FeaturesSection.jsx)
 - Email/Password + Google OAuth authentication
-- Protected routes (Dashboard, Log Sighting, My Sightings, Profile)
+- Protected routes (Dashboard, Log Sighting, My Sightings, Profile, Feed)
 - Comprehensive Dashboard with:
   - Stats cards (total, this month, locations, last sighting)
   - Sightings over time (area chart, last 30 days)
@@ -22,20 +22,21 @@ Create a pixel-perfect clone of https://trainspot-hub.emergent.host/ matching it
   - Day-of-week activity chart
   - Streak tracking (current + best)
   - Platform-wide stats (total sightings, total users)
+  - AI-powered analytics summary (GPT via emergentintegrations)
 - Log Sighting form with train details, traction type, location/time, photos (FormData + JSON), notes
 - Public sharing: toggle sightings/profile public, copy shareable links
 - My Sightings gallery/list view with search, delete, share controls, detail modal
 - Profile management (name, picture, password change, profile visibility, delete account)
 - Public pages: /share/sighting/:shareId, /share/user/:userId
+- **Community Feed** (/feed): Authenticated-only page showing all public sightings with search, pagination, and nav
 
-## Key Fixes Applied (April 2026)
+## Key Fixes Applied
+- **AI Summary 401 bug**: Fixed auth in ai_summary.py — was querying `users` collection instead of `user_sessions`
 - **"Body is disturbed or locked"**: Created safeFetch (XHR-based) to bypass emergent-main.js fetch monkey-patching
 - **Relative URLs**: All API calls use relative paths (/api/...) for cross-domain compatibility
 - **CORS**: Dynamic from CORS_ORIGINS env var
 - **Google OAuth race condition**: AuthProvider skips checkAuth when session_id in hash
 - **Cookie settings**: Secure + SameSite=lax
-- **LogSighting.jsx truncation**: Fully rebuilt
-- **FormData upload**: Added /api/sightings/upload endpoint for multipart file uploads
 
 ## Backlog
-- None (all requirements implemented + analytics + sharing features added)
+- End-to-end multi-user testing for public profile and public sighting sharing (P1)

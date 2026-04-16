@@ -1,7 +1,13 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { LayoutGrid, Search, Loader2, ChevronLeft, ChevronRight, Train, MapPin, User, Calendar, Zap } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import safeFetch from '../lib/safeFetch';
+import {
+  LayoutGrid, Search, Loader2, ChevronLeft, ChevronRight, Train, MapPin,
+  User, Calendar, Zap, LogOut, Menu, Plus
+} from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '../components/ui/sheet';
 
 const API = '/api';
 
@@ -75,7 +81,41 @@ function FeedCard({ sighting }) {
   );
 }
 
+const MobileNav = ({ user, onLogout }) => (
+  <Sheet>
+    <SheetTrigger asChild>
+      <button className="md:hidden p-2 text-gray-800" aria-label="Menu">
+        <Menu size={24} />
+      </button>
+    </SheetTrigger>
+    <SheetContent side="right" className="bg-[#0f0f10] border-gray-800 w-[280px]">
+      <div className="flex flex-col gap-6 mt-8">
+        <div className="flex items-center gap-3 pb-4 border-b border-gray-800">
+          {user?.picture ? (
+            <img src={user.picture} alt="" className="w-10 h-10 rounded-full object-cover" />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-[#e34c26] flex items-center justify-center text-white">
+              <User size={20} />
+            </div>
+          )}
+          <span className="text-white font-medium">{user?.name}</span>
+        </div>
+        <Link to="/dashboard" className="text-gray-300 hover:text-white py-2">Dashboard</Link>
+        <Link to="/sightings" className="text-gray-300 hover:text-white py-2">My Sightings</Link>
+        <Link to="/log-sighting" className="text-gray-300 hover:text-white py-2">Log Sighting</Link>
+        <Link to="/feed" className="text-white font-medium py-2">Feed</Link>
+        <Link to="/profile" className="text-gray-300 hover:text-white py-2">Profile</Link>
+        <button onClick={onLogout} className="text-red-400 hover:text-red-300 py-2 text-left mt-4">
+          <LogOut size={18} className="inline mr-2" /> Logout
+        </button>
+      </div>
+    </SheetContent>
+  </Sheet>
+);
+
 export default function PublicFeed() {
+  const { user, logout, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [sightings, setSightings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -83,6 +123,10 @@ export default function PublicFeed() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+
+  useEffect(() => {
+    if (!authLoading && !user) navigate('/auth');
+  }, [authLoading, user, navigate]);
 
   // Debounce search
   useEffect(() => {
@@ -111,7 +155,17 @@ export default function PublicFeed() {
     }
   }, [page, debouncedSearch]);
 
-  useEffect(() => { fetchFeed(); }, [fetchFeed]);
+  useEffect(() => { if (user) fetchFeed(); }, [fetchFeed, user]);
+
+  const handleLogout = async () => { await logout(); navigate('/'); };
+
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen bg-[#0f0f10] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-[#e34c26] animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0f0f10]">
@@ -121,13 +175,27 @@ export default function PublicFeed() {
           <LayoutGrid size={22} strokeWidth={2.5} className="text-[#e34c26]" />
           <span className="text-[#e34c26] font-bold text-lg tracking-wider uppercase">TrackLog</span>
         </Link>
-        <div className="flex items-center gap-3">
-          <Link to="/auth" className="text-gray-800 hover:text-gray-900 text-sm font-medium">
-            Sign In
+        <nav className="hidden md:flex items-center gap-6">
+          <Link to="/dashboard" className="text-gray-600 text-sm hover:text-gray-900">Dashboard</Link>
+          <Link to="/sightings" className="text-gray-600 text-sm hover:text-gray-900">My Sightings</Link>
+          <Link to="/log-sighting" className="text-gray-600 text-sm hover:text-gray-900">Log Sighting</Link>
+          <Link to="/feed" className="text-gray-800 font-medium text-sm">Feed</Link>
+        </nav>
+        <div className="flex items-center gap-2 md:gap-4">
+          <Link to="/profile" className="hidden md:flex items-center gap-2 hover:opacity-80">
+            {user?.picture ? (
+              <img src={user.picture} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-[#e34c26] flex items-center justify-center text-white">
+                <User size={16} />
+              </div>
+            )}
+            <span className="text-gray-800 font-medium text-sm">{user?.name}</span>
           </Link>
-          <Link to="/auth?signup=true" className="bg-[#e34c26] hover:bg-[#d14020] text-white font-semibold text-xs uppercase tracking-wider px-4 py-2 rounded transition-colors">
-            Get Started
-          </Link>
+          <Button onClick={handleLogout} variant="outline" size="sm" className="hidden md:flex border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white">
+            <LogOut size={16} className="mr-1" /> Logout
+          </Button>
+          <MobileNav user={user} onLogout={handleLogout} />
         </div>
       </header>
 
@@ -135,21 +203,28 @@ export default function PublicFeed() {
         {/* Title & Search */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-white text-2xl md:text-3xl font-bold mb-1">Public Sightings</h1>
+            <h1 className="text-white text-2xl md:text-3xl font-bold mb-1">Community Feed</h1>
             <p className="text-gray-400 text-sm">
               {total > 0 ? `${total} sighting${total !== 1 ? 's' : ''} shared by the community` : 'Explore train sightings shared by spotters'}
             </p>
           </div>
-          <div className="relative w-full sm:w-72">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-            <input
-              type="text"
-              placeholder="Search trains, operators, locations..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-[#1a1a1c] border border-gray-800 rounded-lg pl-9 pr-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-orange-500/50 transition-colors"
-              data-testid="feed-search-input"
-            />
+          <div className="flex items-center gap-3">
+            <div className="relative w-full sm:w-72">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+              <input
+                type="text"
+                placeholder="Search trains, operators, locations..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full bg-[#1a1a1c] border border-gray-800 rounded-lg pl-9 pr-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-orange-500/50 transition-colors"
+                data-testid="feed-search-input"
+              />
+            </div>
+            <Link to="/log-sighting" className="hidden sm:block">
+              <Button className="bg-[#e34c26] hover:bg-[#d14020] text-white font-semibold">
+                <Plus size={18} className="mr-2" /> Log Sighting
+              </Button>
+            </Link>
           </div>
         </div>
 
@@ -173,8 +248,8 @@ export default function PublicFeed() {
                 : 'Be the first to share a sighting with the community!'}
             </p>
             {!debouncedSearch && (
-              <Link to="/auth?signup=true" className="inline-block mt-6 bg-[#e34c26] hover:bg-[#d14020] text-white font-semibold text-sm px-6 py-2.5 rounded-lg transition-colors">
-                Start Logging
+              <Link to="/log-sighting" className="inline-block mt-6 bg-[#e34c26] hover:bg-[#d14020] text-white font-semibold text-sm px-6 py-2.5 rounded-lg transition-colors">
+                Log a Sighting
               </Link>
             )}
           </div>
