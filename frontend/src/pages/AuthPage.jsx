@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { LayoutGrid, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { LayoutGrid, Mail, Lock, User, Eye, EyeOff, ArrowLeft, CheckCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { useAuth } from '../context/AuthContext';
+import safeFetch from '../lib/safeFetch';
+
+const API = '/api';
 
 const AuthPage = () => {
   const [searchParams] = useSearchParams();
@@ -13,6 +16,9 @@ const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSent, setForgotSent] = useState(false);
   
   const [formData, setFormData] = useState({
     email: '',
@@ -50,6 +56,28 @@ const AuthPage = () => {
     }
   };
 
+  const handleForgotSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const res = await safeFetch(`${API}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.detail || 'Request failed');
+      }
+      setForgotSent(true);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#0f0f10] flex">
       {/* Left side - Form */}
@@ -67,15 +95,81 @@ const AuthPage = () => {
 
           {/* Heading */}
           <h1 className="text-white text-3xl font-bold mb-2">
-            {isRegister ? 'Create your account' : 'Welcome back'}
+            {forgotMode
+              ? 'Reset your password'
+              : isRegister ? 'Create your account' : 'Welcome back'}
           </h1>
           <p className="text-gray-400 mb-8">
-            {isRegister 
-              ? 'Start tracking your train sightings today' 
-              : 'Sign in to continue your trainspotting journey'
+            {forgotMode
+              ? "Enter your email and we'll send you a reset link"
+              : isRegister 
+                ? 'Start tracking your train sightings today' 
+                : 'Sign in to continue your trainspotting journey'
             }
           </p>
 
+          {/* Forgot Password Flow */}
+          {forgotMode ? (
+            forgotSent ? (
+              <div className="text-center" data-testid="forgot-sent">
+                <CheckCircle size={48} className="text-green-500 mx-auto mb-4" />
+                <h2 className="text-white text-lg font-semibold mb-2">Check your email</h2>
+                <p className="text-gray-400 text-sm mb-6">
+                  If an account exists for <span className="text-white">{forgotEmail}</span>, we've sent a password reset link. It expires in 1 hour.
+                </p>
+                <button
+                  onClick={() => { setForgotMode(false); setForgotSent(false); setForgotEmail(''); setError(''); }}
+                  className="text-[#e34c26] hover:underline text-sm font-medium"
+                >
+                  Back to Sign In
+                </button>
+              </div>
+            ) : (
+              <>
+                <form onSubmit={handleForgotSubmit} className="space-y-4">
+                  <div>
+                    <Label htmlFor="forgot-email" className="text-gray-300 text-sm">Email Address</Label>
+                    <div className="relative mt-1">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                      <Input
+                        id="forgot-email"
+                        type="email"
+                        value={forgotEmail}
+                        onChange={(e) => { setForgotEmail(e.target.value); setError(''); }}
+                        placeholder="you@example.com"
+                        className="pl-10 h-12 bg-[#1a1a1c] border-gray-700 text-white placeholder:text-gray-500 focus:border-[#e34c26] focus:ring-[#e34c26]"
+                        required
+                        data-testid="forgot-email-input"
+                      />
+                    </div>
+                  </div>
+
+                  {error && (
+                    <div className="text-red-500 text-sm bg-red-500/10 p-3 rounded-lg">{error}</div>
+                  )}
+
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full h-12 bg-[#e34c26] hover:bg-[#d14020] text-white font-semibold text-sm uppercase tracking-wider rounded-lg"
+                    data-testid="forgot-submit"
+                  >
+                    {loading ? 'Sending...' : 'Send Reset Link'}
+                  </Button>
+                </form>
+
+                <p className="mt-6 text-center">
+                  <button
+                    onClick={() => { setForgotMode(false); setError(''); }}
+                    className="text-gray-400 hover:text-gray-300 text-sm flex items-center gap-1 mx-auto"
+                  >
+                    <ArrowLeft size={14} /> Back to Sign In
+                  </button>
+                </p>
+              </>
+            )
+          ) : (
+          <>
           {/* Google Sign In */}
           <Button
             onClick={loginWithGoogle}
@@ -163,6 +257,19 @@ const AuthPage = () => {
               </div>
             </div>
 
+            {!isRegister && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => { setForgotMode(true); setError(''); }}
+                  className="text-[#e34c26] hover:underline text-xs font-medium"
+                  data-testid="forgot-password-link"
+                >
+                  Forgot password?
+                </button>
+              </div>
+            )}
+
             {error && (
               <div className="text-red-500 text-sm bg-red-500/10 p-3 rounded-lg">
                 {error}
@@ -195,9 +302,11 @@ const AuthPage = () => {
           {/* Back to home */}
           <p className="mt-4 text-center">
             <a href="/" className="text-gray-500 hover:text-gray-300 text-sm">
-              ← Back to home
+              &larr; Back to home
             </a>
           </p>
+          </>
+          )}
         </div>
       </div>
 

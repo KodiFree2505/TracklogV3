@@ -6,7 +6,16 @@ import uuid
 import httpx
 import os
 import base64
+import smtplib
+import logging
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from passlib.context import CryptContext
+from dotenv import load_dotenv
+
+load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -329,3 +338,120 @@ async def toggle_profile_visibility(data: ProfileVisibilityUpdate, request: Requ
         {"$set": {"is_profile_public": data.is_profile_public}}
     )
     return {"message": "Profile visibility updated", "is_profile_public": data.is_profile_public}
+
+
+# ── Forgot Password / Reset ─────────────────────────────────────
+
+def send_reset_email(to_email: str, reset_link: str):
+    smtp_email = os.environ.get("SMTP_EMAIL")
+    smtp_password = os.environ.get("SMTP_PASSWORD")
+    if not smtp_email or not smtp_password:
+        raise HTTPException(status_code=500, detail="Email service not configured")
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = "Reset your TrackLog password"
+    msg["From"] = f"TrackLog <{smtp_email}>"
+    msg["To"] = to_email
+
+    text = f"Reset your password by visiting: {reset_link}\n\nThis link expires in 1 hour. If you didn't request this, ignore this email."
+
+    html = f"""\
+<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#0f0f10;border-radius:12px;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <span style="color:#e34c26;font-weight:bold;font-size:22px;letter-spacing:2px;">TRACKLOG</span>
+  </div>
+  <h2 style="color:#fff;font-size:20px;margin-bottom:8px;">Password Reset</h2>
+  <p style="color:#9ca3af;font-size:14px;line-height:1.6;">
+    We received a request to reset your password. Click the button below to choose a new one.
+  </p>
+  <div style="text-align:center;margin:28px 0;">
+    <a href="{reset_link}" style="background:#e34c26;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;display:inline-block;">
+      Reset Password
+    </a>
+  </div>
+  <p style="color:#6b7280;font-size:12px;line-height:1.5;">
+    This link expires in 1 hour. If you didn't request this, you can safely ignore this email.
+  </p>
+</div>"""
+
+    msg.attach(MIMEText(text, "plain"))
+    msg.attach(MIMEText(html, "html"))
+
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(smtp_email, smtp_password)
+            server.sendmail(smtp_email, to_email, msg.as_string())
+    except Exception as e:
+        logger.error(f"Failed to send reset email: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send email")
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+
+@auth_router.post("/forgot-password")
+async def forgot_password(data: ForgotPasswordRequest, request: Request):
+    user = await db.users.find_one({"email": data.email}, {"_id": 0})
+    # Always return success to avoid leaking which emails exist
+    if not user:
+        return {"message": "If an account with that email exists, a reset link has been sent."}
+
+    if user.get("auth_provider") == "google":
+        return {"message": "If an account with that email exists, a reset link has been sent."}
+
+    token = uuid.uuid4().hex
+    await db.password_resets.insert_one({
+        "user_id": user["user_id"],
+        "token": token,
+        "expires_at": datetime.now(timezone.utc) + timedelta(hours=1),
+        "created_at": datetime.now(timezone.utc),
+        "used": False,
+    })
+
+    origin = request.headers.get("origin") or request.headers.get("referer", "").rstrip("/")
+    if not origin:
+        origin = str(request.base_url).rstrip("/")
+    reset_link = f"{origin}/reset-password?token={token}"
+
+    send_reset_email(user["email"], reset_link)
+    return {"message": "If an account with that email exists, a reset link has been sent."}
+
+
+@auth_router.post("/reset-password")
+async def reset_password(data: ResetPasswordRequest):
+    reset_doc = await db.password_resets.find_one(
+        {"token": data.token, "used": False}, {"_id": 0}
+    )
+    if not reset_doc:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link")
+
+    expires_at = reset_doc["expires_at"]
+    if isinstance(expires_at, str):
+        expires_at = datetime.fromisoformat(expires_at)
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Reset link has expired")
+
+    if len(data.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+
+    new_hash = hash_password(data.new_password)
+    await db.users.update_one(
+        {"user_id": reset_doc["user_id"]},
+        {"$set": {"password_hash": new_hash}},
+    )
+    await db.password_resets.update_one(
+        {"token": data.token},
+        {"$set": {"used": True}},
+    )
+    # Invalidate all sessions for security
+    await db.user_sessions.delete_many({"user_id": reset_doc["user_id"]})
+
+    return {"message": "Password has been reset successfully. Please sign in with your new password."}

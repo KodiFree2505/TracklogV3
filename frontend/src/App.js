@@ -14,6 +14,7 @@ import PublicProfile from "./pages/PublicProfile";
 import PublicFeed from "./pages/PublicFeed";
 import BookmarksPage from "./pages/BookmarksPage";
 import DiscoverPage from "./pages/DiscoverPage";
+import ResetPassword from "./pages/ResetPassword";
 
 // Router component that checks for session_id in URL hash
 function AppRouter() {
@@ -29,6 +30,7 @@ function AppRouter() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/auth" element={<AuthPage />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/feed" element={<PublicFeed />} />
       <Route path="/bookmarks" element={<BookmarksPage />} />
       <Route path="/discover" element={<DiscoverPage />} />

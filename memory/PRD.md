@@ -8,14 +8,16 @@ Create a pixel-perfect clone of TrackLog matching its design, layout, colors, fo
 - **Backend**: FastAPI + Motor (async MongoDB) (port 8001)
 - **Database**: MongoDB (test_database)
 - **Auth**: Email/Password (bcrypt) + Emergent-managed Google OAuth, session cookies (HttpOnly)
+- **Email**: Gmail SMTP (smtplib, SSL on port 465) for password reset
 
 ## What's Been Implemented
 - Pixel-perfect landing page
 - Email/Password + Google OAuth authentication
+- **Forgot Password / Reset**: "Forgot password?" on login → email form → Gmail SMTP sends styled HTML magic link → /reset-password page sets new password, invalidates sessions
 - Protected routes: Dashboard, Log Sighting, My Sightings, Profile, Feed, Bookmarks, Discover
 - Dashboard: stats, charts (recharts), AI Insights with conversational reply (GPT)
 - Log Sighting form with photos, traction type
-- **Edit Sighting with photo management**: inline edit dialog with add/remove photos (base64 upload), remove existing photos (deletes from disk), plus all text fields
+- Edit Sighting with photo management (add/remove photos via base64)
 - Public sharing: toggle sightings/profile public, shareable links
 - My Sightings gallery/list with search, delete, share, edit controls
 - Profile management (name, picture, password, visibility, delete)
@@ -28,14 +30,15 @@ Create a pixel-perfect clone of TrackLog matching its design, layout, colors, fo
 
 ## Key API Endpoints
 - Auth: POST /api/auth/register, /login, GET /me, PUT /profile, /password, /profile/visibility
-- Sightings: POST /api/sightings, GET, PUT /{id} (with photos support), DELETE /{id}, /stats, /analytics, /interactions/me, /bookmarks/me
+- Password Reset: POST /api/auth/forgot-password, POST /api/auth/reset-password
+- Sightings: POST /api/sightings, GET, PUT /{id}, DELETE /{id}, /stats, /analytics, /interactions/me, /bookmarks/me
 - Like/Bookmark: POST /api/sightings/{id}/like, /bookmark
 - Public: GET /api/public/feed, /sightings/{share_id}, /users/{user_id}
 - Social: POST /api/social/follow/{id}, GET /following/me, /users/search, /notifications, /notifications/unread-count, PUT /notifications/read
 - AI: POST /api/ai/analytics-summary, /analytics-reply
 
 ## DB Collections
-users, user_sessions, sightings, likes, bookmarks, follows, notifications
+users, user_sessions, sightings, likes, bookmarks, follows, notifications, password_resets
 
 ## Backlog
 - None remaining
