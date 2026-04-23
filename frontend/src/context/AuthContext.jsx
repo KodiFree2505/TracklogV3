@@ -91,7 +91,7 @@ export const AuthProvider = ({ children }) => {
 
   const loginWithGoogle = () => {
     const redirectUrl = window.location.origin + '/dashboard';
-    window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+    window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}&prompt=consent`;
   };
 
   const exchangeSession = async (sessionId) => {
