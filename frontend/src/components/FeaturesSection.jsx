@@ -1,14 +1,23 @@
 import React from 'react';
-import { Camera, BarChart3, Search, Clock, MapPin, LayoutGrid } from 'lucide-react';
+import {
+  Camera, BarChart3, Map, Brain, Users, Share2,
+  Bell, Heart, Compass, Mail, Pencil, Shield
+} from 'lucide-react';
 import { features } from '../data/mockData';
 
 const iconMap = {
-  Camera: Camera,
-  BarChart3: BarChart3,
-  Search: Search,
-  Clock: Clock,
-  MapPin: MapPin,
-  LayoutGrid: LayoutGrid
+  Camera,
+  BarChart3,
+  Map,
+  Brain,
+  Users,
+  Share2,
+  Bell,
+  Heart,
+  Compass,
+  Mail,
+  Pencil,
+  Shield
 };
 
 const FeaturesSection = () => {
@@ -30,21 +39,17 @@ const FeaturesSection = () => {
           {features.map((feature) => {
             const IconComponent = iconMap[feature.icon];
             return (
-              <div 
+              <div
                 key={feature.id}
                 className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-6 hover:border-orange-500/30 transition-all duration-300 group"
+                data-testid={`feature-card-${feature.id}`}
               >
-                {/* Icon */}
                 <div className="w-12 h-12 bg-[#2a1a1a] rounded-lg flex items-center justify-center mb-5 group-hover:bg-[#3a1a1a] transition-colors">
-                  <IconComponent size={22} className="text-orange-500" />
+                  {IconComponent && <IconComponent size={22} className="text-orange-500" />}
                 </div>
-
-                {/* Title */}
                 <h3 className="text-white text-lg font-semibold mb-3">
                   {feature.title}
                 </h3>
-
-                {/* Description */}
                 <p className="text-gray-400 text-sm leading-relaxed">
                   {feature.description}
                 </p>
