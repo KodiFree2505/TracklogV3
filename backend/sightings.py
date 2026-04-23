@@ -420,6 +420,62 @@ async def get_my_bookmarks(request: Request):
     return {"sightings": results}
 
 
+# ── Map Data with Geocoding ──────────────────────────────────────
+
+async def geocode_location(location_text: str) -> Optional[dict]:
+    """Geocode a location string using OpenStreetMap Nominatim (cached)."""
+    cached = await db.geocache.find_one({"location": location_text}, {"_id": 0})
+    if cached:
+        return {"lat": cached["lat"], "lng": cached["lng"]}
+
+    import httpx
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                "https://nominatim.openstreetmap.org/search",
+                params={"q": location_text, "format": "json", "limit": 1},
+                headers={"User-Agent": "Tracklog/1.0"},
+                timeout=5.0,
+            )
+            results = resp.json()
+            if results:
+                lat = float(results[0]["lat"])
+                lng = float(results[0]["lon"])
+                await db.geocache.insert_one({"location": location_text, "lat": lat, "lng": lng})
+                return {"lat": lat, "lng": lng}
+    except Exception as e:
+        logger.warning(f"Geocoding failed for '{location_text}': {e}")
+    return None
+
+
+@sightings_router.get("/map/data")
+async def get_map_data(request: Request):
+    """Return all user sightings with geocoded coordinates for the map view."""
+    user_id = await get_current_user_id(request)
+    sightings = await db.sightings.find(
+        {"user_id": user_id}, {"_id": 0}
+    ).sort("created_at", -1).to_list(1000)
+
+    results = []
+    for s in sightings:
+        coords = await geocode_location(s["location"])
+        if coords:
+            results.append({
+                "sighting_id": s["sighting_id"],
+                "train_number": s["train_number"],
+                "train_type": s["train_type"],
+                "traction_type": s.get("traction_type"),
+                "operator": s["operator"],
+                "location": s["location"],
+                "sighting_date": s["sighting_date"],
+                "sighting_time": s["sighting_time"],
+                "photos": s.get("photos", []),
+                "lat": coords["lat"],
+                "lng": coords["lng"],
+            })
+    return {"markers": results}
+
+
 # ── Dynamic /{sighting_id} routes ────────────────────────────────
 
 @sightings_router.get("/{sighting_id}", response_model=SightingResponse)

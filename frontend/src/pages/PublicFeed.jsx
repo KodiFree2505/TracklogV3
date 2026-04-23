@@ -144,6 +144,7 @@ const MobileNav = ({ user, onLogout }) => (
         <Link to="/dashboard" className="text-gray-300 hover:text-white py-2">Dashboard</Link>
         <Link to="/sightings" className="text-gray-300 hover:text-white py-2">My Sightings</Link>
         <Link to="/log-sighting" className="text-gray-300 hover:text-white py-2">Log Sighting</Link>
+        <Link to="/map" className="text-gray-300 hover:text-white py-2">Map</Link>
         <Link to="/feed" className="text-white font-medium py-2">Feed</Link>
         <Link to="/bookmarks" className="text-gray-300 hover:text-white py-2">Bookmarks</Link>
         <Link to="/profile" className="text-gray-300 hover:text-white py-2">Profile</Link>
@@ -270,6 +271,7 @@ export default function PublicFeed() {
           <Link to="/dashboard" className="text-gray-600 text-sm hover:text-gray-900">Dashboard</Link>
           <Link to="/sightings" className="text-gray-600 text-sm hover:text-gray-900">My Sightings</Link>
           <Link to="/log-sighting" className="text-gray-600 text-sm hover:text-gray-900">Log Sighting</Link>
+          <Link to="/map" className="text-gray-600 text-sm hover:text-gray-900">Map</Link>
           <Link to="/feed" className="text-gray-800 font-medium text-sm">Feed</Link>
           <Link to="/bookmarks" className="text-gray-600 text-sm hover:text-gray-900">Bookmarks</Link>
         </nav>

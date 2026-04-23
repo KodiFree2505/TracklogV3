@@ -15,6 +15,7 @@ import { HourlyChart, DayOfWeekChart } from '../components/analytics/PatternChar
 import { StreakCard, PlatformStats } from '../components/analytics/StatsCards';
 import AiSummary from '../components/analytics/AiSummary';
 import NotificationBell from '../components/NotificationBell';
+import MiniMap from '../components/MiniMap';
 
 const BACKEND_URL = '';
 const API = '/api';
@@ -51,6 +52,7 @@ const MobileNav = ({ user, onLogout }) => (
         <Link to="/dashboard" className="text-white font-medium py-2">Dashboard</Link>
         <Link to="/sightings" className="text-gray-300 hover:text-white py-2">My Sightings</Link>
         <Link to="/log-sighting" className="text-gray-300 hover:text-white py-2">Log Sighting</Link>
+        <Link to="/map" className="text-gray-300 hover:text-white py-2">Map</Link>
         <Link to="/feed" className="text-gray-300 hover:text-white py-2">Feed</Link>
         <Link to="/discover" className="text-gray-300 hover:text-white py-2">Discover</Link>
         <Link to="/bookmarks" className="text-gray-300 hover:text-white py-2">Bookmarks</Link>
@@ -150,6 +152,7 @@ const Dashboard = () => {
           <Link to="/dashboard" className="text-gray-800 font-medium text-sm">Dashboard</Link>
           <Link to="/sightings" className="text-gray-600 text-sm hover:text-gray-900">My Sightings</Link>
           <Link to="/log-sighting" className="text-gray-600 text-sm hover:text-gray-900">Log Sighting</Link>
+          <Link to="/map" className="text-gray-600 text-sm hover:text-gray-900">Map</Link>
           <Link to="/feed" className="text-gray-600 text-sm hover:text-gray-900">Feed</Link>
           <Link to="/discover" className="text-gray-600 text-sm hover:text-gray-900">Discover</Link>
           <Link to="/bookmarks" className="text-gray-600 text-sm hover:text-gray-900">Bookmarks</Link>
@@ -209,6 +212,13 @@ const Dashboard = () => {
         {!analyticsLoading && analytics && (
           <div className="mb-6 md:mb-8">
             <TimelineChart data={analytics.sightings_over_time} />
+          </div>
+        )}
+
+        {/* Mini Map */}
+        {!statsLoading && stats && stats.total_sightings > 0 && (
+          <div className="mb-6 md:mb-8">
+            <MiniMap />
           </div>
         )}
 
