@@ -14,6 +14,7 @@ from sightings import sightings_router, set_db as set_sightings_db
 from public import public_router, set_db as set_public_db
 from ai_summary import ai_router, set_db as set_ai_db
 from social import social_router, set_db as set_social_db
+from digest import digest_router, set_db as set_digest_db
 
 # --------------------------------------------------
 # Paths & Env
@@ -52,6 +53,7 @@ async def lifespan(app: FastAPI):
     set_public_db(db)
     set_ai_db(db)
     set_social_db(db)
+    set_digest_db(db)
 
     logger.info(f"✅ Connected to MongoDB: {db_name}")
     yield
@@ -82,6 +84,7 @@ api_router.include_router(sightings_router)
 api_router.include_router(public_router)
 api_router.include_router(ai_router)
 api_router.include_router(social_router)
+api_router.include_router(digest_router)
 
 app.include_router(api_router)
 

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import safeFetch from '../lib/safeFetch';
 import {
   LayoutGrid, LogOut, Camera, BarChart3, MapPin, Clock, User, Loader2,
-  Plus, Train, Building2, Calendar, Menu, Zap
+  Plus, Train, Building2, Calendar, Menu, Zap, Mail, CheckCircle
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '../components/ui/sheet';
@@ -71,6 +71,8 @@ const Dashboard = () => {
   const [analytics, setAnalytics] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [digestSending, setDigestSending] = useState(false);
+  const [digestSent, setDigestSent] = useState(false);
 
   const currentUser = location.state?.user || user;
 
@@ -94,6 +96,23 @@ const Dashboard = () => {
   }, [currentUser]);
 
   const handleLogout = async () => { await logout(); navigate('/'); };
+
+  const handleSendDigest = async () => {
+    setDigestSending(true);
+    try {
+      const res = await safeFetch(`${API}/digest/send`, { method: 'POST', credentials: 'include' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.detail || 'Failed');
+      }
+      setDigestSent(true);
+      setTimeout(() => setDigestSent(false), 5000);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setDigestSending(false);
+    }
+  };
 
   if (loading || !currentUser) {
     return (
@@ -224,6 +243,35 @@ const Dashboard = () => {
             <PlatformStats totalSightings={analytics.platform?.total_sightings} totalUsers={analytics.platform?.total_users} />
           </div>
         )}
+
+        {/* Daily Digest */}
+        <div className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-5 md:p-6 mb-6 md:mb-8" data-testid="daily-digest-card">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                <Mail size={18} className="text-white" />
+              </div>
+              <div>
+                <h3 className="text-white font-semibold text-sm md:text-base">Daily Digest</h3>
+                <p className="text-gray-500 text-xs">Get a recap of the last 24h sent to your email</p>
+              </div>
+            </div>
+            <Button
+              onClick={handleSendDigest}
+              disabled={digestSending || digestSent}
+              className={`text-sm px-4 py-2 ${digestSent ? 'bg-green-600 hover:bg-green-600' : 'bg-[#e34c26] hover:bg-[#d14020]'} text-white`}
+              data-testid="send-digest-btn"
+            >
+              {digestSending ? (
+                <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Sending...</>
+              ) : digestSent ? (
+                <><CheckCircle size={16} className="mr-2" /> Sent!</>
+              ) : (
+                <><Mail size={16} className="mr-2" /> Send Digest</>
+              )}
+            </Button>
+          </div>
+        </div>
 
         {/* Empty State */}
         {!statsLoading && (!stats || stats.total_sightings === 0) && (
