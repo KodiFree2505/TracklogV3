@@ -49,3 +49,9 @@ body {
 .App {
   text-align: left;
 }
+
+/* Ensure Shadcn Sheet overlay renders above Leaflet map */
+[data-radix-popper-content-wrapper],
+[role="dialog"] {
+  z-index: 1200 !important;
+}

@@ -172,7 +172,7 @@ const MapView = () => {
   return (
     <div className="h-screen flex flex-col bg-[#0f0f10]">
       {/* Header */}
-      <header className="bg-[#FFE500] h-[52px] flex items-center justify-between px-4 md:px-12 flex-shrink-0">
+      <header className="bg-[#FFE500] h-[52px] flex items-center justify-between px-4 md:px-12 flex-shrink-0 relative z-[1100]">
         <Link to="/" className="flex items-center gap-2">
           <LayoutGrid size={22} strokeWidth={2.5} className="text-[#e34c26]" />
           <span className="text-[#e34c26] font-bold text-lg tracking-wider uppercase">TrackLog</span>
