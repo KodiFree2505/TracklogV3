@@ -1,12 +1,11 @@
 import React, { useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { LayoutGrid, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { exchangeSession } = useAuth();
+  const { exchangeGoogleCode } = useAuth();
   const hasProcessed = useRef(false);
 
   useEffect(() => {
@@ -15,16 +14,17 @@ const AuthCallback = () => {
 
     const handleCallback = async () => {
       try {
-        const hash = window.location.hash || location.hash || '';
-        const params = new URLSearchParams(hash.replace('#', ''));
-        const sessionId = params.get('session_id');
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
 
-        if (!sessionId) {
-          throw new Error('No session_id found in URL');
+        if (!code) {
+          throw new Error('No authorization code found in URL');
         }
 
-        await exchangeSession(sessionId);
-        window.history.replaceState(null, '', window.location.pathname);
+        // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
+        const redirectUri = window.location.origin + '/auth/callback';
+        await exchangeGoogleCode(code, redirectUri);
+        window.history.replaceState(null, '', '/dashboard');
         navigate('/dashboard', { replace: true });
       } catch (error) {
         console.error("Google auth callback failed:", error);
@@ -33,7 +33,7 @@ const AuthCallback = () => {
     };
 
     handleCallback();
-  }, [exchangeSession, navigate, location.hash]);
+  }, [exchangeGoogleCode, navigate]);
 
   return (
     <div className="min-h-screen bg-[#0f0f10] flex items-center justify-center">

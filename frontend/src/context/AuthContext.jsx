@@ -42,10 +42,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // CRITICAL: If returning from OAuth callback, skip the /me check.
-    // AuthCallback will exchange the session_id and establish the session first.
+    // CRITICAL: If returning from Google OAuth callback, skip the /me check.
+    // AuthCallback will exchange the code and establish the session first.
     // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-    if (window.location.hash?.includes('session_id=')) {
+    if (window.location.pathname === '/auth/callback' && window.location.search?.includes('code=')) {
       setLoading(false);
       return;
     }
@@ -90,24 +90,28 @@ export const AuthProvider = ({ children }) => {
   };
 
   const loginWithGoogle = () => {
-    const redirectUrl = window.location.origin + '/dashboard';
-    window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}&prompt=consent`;
+    // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
+    const redirectUri = window.location.origin + '/auth/callback';
+    const clientId = '382224905704-a0hkpps4cdmgom8rn17n567tkst0mf8k.apps.googleusercontent.com';
+    const scope = 'openid email profile';
+    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&prompt=consent&access_type=offline`;
+    window.location.href = googleAuthUrl;
   };
 
-  const exchangeSession = async (sessionId) => {
-    const response = await safeFetch(`${API}/auth/session`, {
+  const exchangeGoogleCode = async (code, redirectUri) => {
+    const response = await safeFetch(`${API}/auth/google/callback`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ session_id: sessionId })
+      body: JSON.stringify({ code, redirect_uri: redirectUri })
     });
-    
+
     const data = await response.json();
-    
+
     if (!response.ok) {
-      throw new Error(data.detail || 'Session exchange failed');
+      throw new Error(data.detail || 'Google auth failed');
     }
-    
+
     setUser(data);
     return data;
   };
@@ -130,7 +134,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     loginWithGoogle,
-    exchangeSession,
+    exchangeGoogleCode,
     logout,
     checkAuth
   };

@@ -8,3 +8,7 @@
 ## SMTP (Gmail)
 - Email: Trainspotting.Tracklog@gmail.com
 - App Password: rfgl qljv ffef yopk
+
+## Google OAuth (Custom)
+- Client ID: 382224905704-a0hkpps4cdmgom8rn17n567tkst0mf8k.apps.googleusercontent.com
+- Redirect URI: {origin}/auth/callback

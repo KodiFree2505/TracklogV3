@@ -62,9 +62,6 @@ class PasswordUpdate(BaseModel):
     current_password: str
     new_password: str
 
-class SessionRequest(BaseModel):
-    session_id: str
-
 def set_session_cookie(response: Response, session_token: str):
     # Clear any old cookies with different attributes first
     response.delete_cookie(key="session_token", path="/")
@@ -184,25 +181,56 @@ async def login(user_data: UserLogin, response: Response):
         is_profile_public=user_doc.get("is_profile_public", False)
     )
 
-@auth_router.post("/session")
-async def exchange_session(session_data: SessionRequest, response: Response):
+class GoogleCallbackRequest(BaseModel):
+    code: str
+    redirect_uri: str
+
+@auth_router.post("/google/callback")
+async def google_callback(data: GoogleCallbackRequest, response: Response):
+    """Exchange Google OAuth authorization code for user session."""
+    google_client_id = os.environ.get("GOOGLE_CLIENT_ID")
+    google_client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+    if not google_client_id or not google_client_secret:
+        raise HTTPException(status_code=500, detail="Google OAuth not configured")
+
+    # Exchange auth code for tokens
     try:
         async with httpx.AsyncClient() as client:
-            resp = await client.get(
-                "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
-                headers={"X-Session-ID": session_data.session_id}
+            token_resp = await client.post(
+                "https://oauth2.googleapis.com/token",
+                data={
+                    "code": data.code,
+                    "client_id": google_client_id,
+                    "client_secret": google_client_secret,
+                    "redirect_uri": data.redirect_uri,
+                    "grant_type": "authorization_code",
+                },
             )
-            resp.raise_for_status()
-            oauth_data = resp.json()
+            token_resp.raise_for_status()
+            tokens = token_resp.json()
     except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Failed to verify session: {str(e)}")
-    
-    email = oauth_data["email"]
-    name = oauth_data.get("name", email.split("@")[0])
-    picture = oauth_data.get("picture")
-    
+        logger.error(f"Google token exchange failed: {e}")
+        raise HTTPException(status_code=401, detail="Failed to exchange Google auth code")
+
+    # Fetch user info from Google
+    try:
+        async with httpx.AsyncClient() as client:
+            userinfo_resp = await client.get(
+                "https://www.googleapis.com/oauth2/v2/userinfo",
+                headers={"Authorization": f"Bearer {tokens['access_token']}"},
+            )
+            userinfo_resp.raise_for_status()
+            guser = userinfo_resp.json()
+    except Exception as e:
+        logger.error(f"Google userinfo fetch failed: {e}")
+        raise HTTPException(status_code=401, detail="Failed to fetch Google user info")
+
+    email = guser["email"]
+    name = guser.get("name", email.split("@")[0])
+    picture = guser.get("picture")
+
     existing_user = await db.users.find_one({"email": email}, {"_id": 0})
-    
+
     if existing_user:
         user_id = existing_user["user_id"]
         await db.users.update_one(
@@ -217,21 +245,21 @@ async def exchange_session(session_data: SessionRequest, response: Response):
             "name": name,
             "picture": picture,
             "auth_provider": "google",
-            "created_at": datetime.now(timezone.utc)
+            "created_at": datetime.now(timezone.utc),
         }
         await db.users.insert_one(user_doc)
-    
+
     session_token = f"session_{uuid.uuid4().hex}"
     session_doc = {
         "user_id": user_id,
         "session_token": session_token,
         "expires_at": datetime.now(timezone.utc) + timedelta(days=7),
-        "created_at": datetime.now(timezone.utc)
+        "created_at": datetime.now(timezone.utc),
     }
     await db.user_sessions.insert_one(session_doc)
-    
+
     set_session_cookie(response, session_token)
-    
+
     return {"user_id": user_id, "email": email, "name": name, "picture": picture}
 
 @auth_router.get("/me", response_model=UserResponse)

@@ -7,14 +7,14 @@ Create a pixel-perfect clone of TrackLog matching its design, layout, colors, fo
 - **Frontend**: React + Tailwind CSS + Shadcn UI + Recharts (port 3000)
 - **Backend**: FastAPI + Motor (async MongoDB) (port 8001)
 - **Database**: MongoDB (test_database)
-- **Auth**: Email/Password (bcrypt) + Emergent-managed Google OAuth, session cookies (HttpOnly)
+- **Auth**: Email/Password (bcrypt) + Custom Google OAuth (user's own Client ID/Secret), session cookies (HttpOnly)
 - **Email**: Gmail SMTP (smtplib, SSL on port 465) for password reset + daily digest
 
 ## What's Been Implemented
 - Pixel-perfect landing page
-- Email/Password + Google OAuth authentication
+- Email/Password + Custom Google OAuth authentication (user's own Google Cloud project, "Tracklog" branding)
 - Forgot Password / Reset via Gmail SMTP magic link
-- **Daily Digest**: "Send Digest" button on Dashboard sends a styled HTML email recap (last 24h sightings, community highlights, likes, new followers, all-time stats)
+- **Daily Digest**: Automated at 4:00 PM UTC + manual trigger. Styled HTML email recap.
 - Protected routes: Dashboard, Log Sighting, My Sightings, Profile, Feed, Bookmarks, Discover
 - Dashboard: stats, charts (recharts), AI Insights with conversational reply (GPT), daily digest trigger
 - Log Sighting form with photos, traction type
@@ -22,9 +22,10 @@ Create a pixel-perfect clone of TrackLog matching its design, layout, colors, fo
 - Public sharing, My Sightings gallery/list, Profile management
 - Community Feed with like/bookmark/follow
 - Follow system, Notification bell, Discover page, Enhanced Public Profiles
+- Browser tab title: "Tracklog"
 
 ## Key API Endpoints
-- Auth: POST /register, /login, /forgot-password, /reset-password, GET /me
+- Auth: POST /register, /login, /forgot-password, /reset-password, /google/callback, GET /me
 - Digest: POST /api/digest/send
 - Sightings: POST, GET, PUT /{id}, DELETE /{id}, /stats, /analytics
 - Social: POST /follow/{id}, GET /following/me, /users/search, /notifications
