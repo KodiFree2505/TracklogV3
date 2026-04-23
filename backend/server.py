@@ -1,4 +1,5 @@
 import os
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -14,7 +15,7 @@ from sightings import sightings_router, set_db as set_sightings_db
 from public import public_router, set_db as set_public_db
 from ai_summary import ai_router, set_db as set_ai_db
 from social import social_router, set_db as set_social_db
-from digest import digest_router, set_db as set_digest_db
+from digest import digest_router, set_db as set_digest_db, send_digest_to_all
 
 # --------------------------------------------------
 # Paths & Env
@@ -32,6 +33,31 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger("server")
+
+# --------------------------------------------------
+# Daily Digest Scheduler (4:00 PM UTC)
+# --------------------------------------------------
+DIGEST_HOUR = 16  # 4:00 PM UTC
+DIGEST_MINUTE = 0
+
+async def digest_scheduler():
+    """Background loop that sends the daily digest at DIGEST_HOUR:DIGEST_MINUTE UTC."""
+    from datetime import datetime, timezone, timedelta
+    logger.info(f"Digest scheduler started — will send daily at {DIGEST_HOUR:02d}:{DIGEST_MINUTE:02d} UTC")
+    while True:
+        now = datetime.now(timezone.utc)
+        target = now.replace(hour=DIGEST_HOUR, minute=DIGEST_MINUTE, second=0, microsecond=0)
+        if target <= now:
+            target += timedelta(days=1)
+        wait_seconds = (target - now).total_seconds()
+        logger.info(f"Next digest in {wait_seconds/3600:.1f}h ({target.isoformat()})")
+        await asyncio.sleep(wait_seconds)
+        try:
+            logger.info("Running scheduled daily digest...")
+            count = await send_digest_to_all()
+            logger.info(f"Scheduled digest sent to {count} user(s)")
+        except Exception as e:
+            logger.error(f"Scheduled digest failed: {e}")
 
 # --------------------------------------------------
 # App Lifecycle (Mongo)
@@ -55,11 +81,16 @@ async def lifespan(app: FastAPI):
     set_social_db(db)
     set_digest_db(db)
 
-    logger.info(f"✅ Connected to MongoDB: {db_name}")
+    logger.info(f"Connected to MongoDB: {db_name}")
+
+    # Start digest scheduler
+    scheduler_task = asyncio.create_task(digest_scheduler())
+
     yield
 
+    scheduler_task.cancel()
     client.close()
-    logger.info("🛑 MongoDB connection closed")
+    logger.info("MongoDB connection closed")
 
 # --------------------------------------------------
 # FastAPI App

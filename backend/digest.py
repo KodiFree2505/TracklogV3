@@ -226,3 +226,22 @@ async def send_daily_digest(request: Request):
             "new_followers_24h": data["new_followers_24h"],
         },
     }
+
+
+async def send_digest_to_all():
+    """Send digest to all users who have at least 1 sighting. Called by the scheduler."""
+    users = await db.users.find(
+        {}, {"_id": 0, "password_hash": 0}
+    ).to_list(10000)
+    sent = 0
+    for user in users:
+        if not user.get("email"):
+            continue
+        try:
+            data = await build_digest_data(user["user_id"])
+            html = build_digest_html(user.get("name", "Trainspotter"), data)
+            send_digest_email(user["email"], user.get("name", "Trainspotter"), html)
+            sent += 1
+        except Exception as e:
+            logger.error(f"Failed to send digest to {user.get('email')}: {e}")
+    return sent

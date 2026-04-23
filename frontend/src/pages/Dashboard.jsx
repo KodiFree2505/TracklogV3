@@ -253,7 +253,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <h3 className="text-white font-semibold text-sm md:text-base">Daily Digest</h3>
-                <p className="text-gray-500 text-xs">Get a recap of the last 24h sent to your email</p>
+                <p className="text-gray-500 text-xs">Auto-sends daily at 4:00 PM UTC, or send now</p>
               </div>
             </div>
             <Button
