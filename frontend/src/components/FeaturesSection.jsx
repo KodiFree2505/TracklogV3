@@ -6,18 +6,8 @@ import {
 import { features } from '../data/mockData';
 
 const iconMap = {
-  Camera,
-  BarChart3,
-  Map,
-  Brain,
-  Users,
-  Share2,
-  Bell,
-  Heart,
-  Compass,
-  Mail,
-  Pencil,
-  Shield
+  Camera, BarChart3, Map, Brain, Users, Share2,
+  Bell, Heart, Compass, Mail, Pencil, Shield
 };
 
 const FeaturesSection = () => {
@@ -41,18 +31,32 @@ const FeaturesSection = () => {
             return (
               <div
                 key={feature.id}
-                className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-6 hover:border-orange-500/30 transition-all duration-300 group"
+                className="bg-[#1a1a1c] border border-gray-800 rounded-lg overflow-hidden hover:border-orange-500/30 transition-all duration-300 group"
                 data-testid={`feature-card-${feature.id}`}
               >
-                <div className="w-12 h-12 bg-[#2a1a1a] rounded-lg flex items-center justify-center mb-5 group-hover:bg-[#3a1a1a] transition-colors">
-                  {IconComponent && <IconComponent size={22} className="text-orange-500" />}
+                {/* Preview Image */}
+                {feature.image && (
+                  <div className="relative h-36 overflow-hidden">
+                    <img
+                      src={feature.image}
+                      alt={feature.title}
+                      className="w-full h-full object-cover object-top opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1c] via-transparent to-transparent" />
+                  </div>
+                )}
+                {/* Content */}
+                <div className="p-6 pt-4">
+                  <div className="w-10 h-10 bg-[#2a1a1a] rounded-lg flex items-center justify-center mb-4 group-hover:bg-[#3a1a1a] transition-colors">
+                    {IconComponent && <IconComponent size={20} className="text-orange-500" />}
+                  </div>
+                  <h3 className="text-white text-lg font-semibold mb-2">
+                    {feature.title}
+                  </h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    {feature.description}
+                  </p>
                 </div>
-                <h3 className="text-white text-lg font-semibold mb-3">
-                  {feature.title}
-                </h3>
-                <p className="text-gray-400 text-sm leading-relaxed">
-                  {feature.description}
-                </p>
               </div>
             );
           })}

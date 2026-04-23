@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import safeFetch from '../lib/safeFetch';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MapPin, Maximize2, Loader2 } from 'lucide-react';
@@ -36,6 +37,22 @@ const FitBoundsMini = ({ markers }) => {
     }
   }, [markers, map]);
   return null;
+};
+
+const createMiniClusterIcon = (cluster) => {
+  const count = cluster.getChildCount();
+  return L.divIcon({
+    html: `<div style="
+      width:28px;height:28px;border-radius:50%;
+      background:#e34c26;border:2px solid rgba(255,255,255,0.8);
+      box-shadow:0 1px 6px rgba(227,76,38,0.4);
+      display:flex;align-items:center;justify-content:center;
+      color:#fff;font-weight:700;font-size:11px;
+    ">${count}</div>`,
+    className: '',
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+  });
 };
 
 const MiniMap = () => {
@@ -85,17 +102,24 @@ const MiniMap = () => {
         <MapContainer center={center} zoom={4} style={{ height: '100%', width: '100%' }} zoomControl={false} attributionControl={false}>
           <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
           <FitBoundsMini markers={markers} />
-          {markers.map(m => (
-            <Marker key={m.sighting_id} position={[m.lat, m.lng]} icon={miniIcon(m.train_type)}>
-              <Popup>
-                <div className="text-xs">
-                  <div className="font-bold">{m.train_number}</div>
-                  <div className="text-gray-500">{m.location}</div>
-                  <div className="text-gray-400">{m.sighting_date}</div>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
+          <MarkerClusterGroup
+            chunkedLoading
+            iconCreateFunction={createMiniClusterIcon}
+            maxClusterRadius={40}
+            showCoverageOnHover={false}
+          >
+            {markers.map(m => (
+              <Marker key={m.sighting_id} position={[m.lat, m.lng]} icon={miniIcon(m.train_type)}>
+                <Popup>
+                  <div className="text-xs">
+                    <div className="font-bold">{m.train_number}</div>
+                    <div className="text-gray-500">{m.location}</div>
+                    <div className="text-gray-400">{m.sighting_date}</div>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+          </MarkerClusterGroup>
         </MapContainer>
       </div>
     </div>

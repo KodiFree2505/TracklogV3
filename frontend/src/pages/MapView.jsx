@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import safeFetch from '../lib/safeFetch';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
@@ -54,6 +55,27 @@ const FitBounds = ({ markers }) => {
     }
   }, [markers, map]);
   return null;
+};
+
+const createClusterIcon = (cluster) => {
+  const count = cluster.getChildCount();
+  let size = 36;
+  let bg = '#e34c26';
+  if (count >= 10) { size = 44; bg = '#dc2626'; }
+  else if (count >= 5) { size = 40; bg = '#ea580c'; }
+  return L.divIcon({
+    html: `<div style="
+      width:${size}px;height:${size}px;border-radius:50%;
+      background:${bg};border:3px solid rgba(255,255,255,0.8);
+      box-shadow:0 2px 12px rgba(227,76,38,0.5);
+      display:flex;align-items:center;justify-content:center;
+      color:#fff;font-weight:700;font-size:${count >= 10 ? 14 : 13}px;
+      font-family:Inter,sans-serif;
+    ">${count}</div>`,
+    className: '',
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
 };
 
 const MobileNav = ({ user, onLogout }) => (
@@ -205,11 +227,19 @@ const MapView = () => {
                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
               />
               <FitBounds markers={markers} />
-              {markers.map((m) => (
-                <Marker key={m.sighting_id} position={[m.lat, m.lng]} icon={createCustomIcon(m.train_type)}>
-                  <Popup><SightingPopup marker={m} /></Popup>
-                </Marker>
-              ))}
+              <MarkerClusterGroup
+                chunkedLoading
+                iconCreateFunction={createClusterIcon}
+                maxClusterRadius={50}
+                spiderfyOnMaxZoom
+                showCoverageOnHover={false}
+              >
+                {markers.map((m) => (
+                  <Marker key={m.sighting_id} position={[m.lat, m.lng]} icon={createCustomIcon(m.train_type)}>
+                    <Popup><SightingPopup marker={m} /></Popup>
+                  </Marker>
+                ))}
+              </MarkerClusterGroup>
             </MapContainer>
 
             {/* Stats Overlay */}
