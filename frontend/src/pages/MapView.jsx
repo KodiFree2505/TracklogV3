@@ -7,7 +7,7 @@ import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
-  LayoutGrid, LogOut, User, Loader2, Menu, Train, MapPin, Clock, Camera
+  LayoutGrid, LogOut, User, Loader2, Menu, Train, MapPin, Clock, Camera, Layers
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '../components/ui/sheet';
@@ -140,6 +140,7 @@ const MapView = () => {
   const navigate = useNavigate();
   const [markers, setMarkers] = useState([]);
   const [mapLoading, setMapLoading] = useState(true);
+  const [showRailLines, setShowRailLines] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) navigate('/auth');
@@ -226,6 +227,15 @@ const MapView = () => {
                 attribution='&copy; <a href="https://carto.com/">CARTO</a>'
                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
               />
+              {showRailLines && (
+                <TileLayer
+                  url="https://tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png"
+                  attribution='Style: <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA 2.0</a> <a href="https://www.openrailwaymap.org/">OpenRailwayMap</a>'
+                  maxZoom={19}
+                  tileSize={256}
+                  opacity={0.75}
+                />
+              )}
               <FitBounds markers={markers} />
               <MarkerClusterGroup
                 chunkedLoading
@@ -274,6 +284,24 @@ const MapView = () => {
                     </div>
                   ))}
                 </div>
+              </div>
+              {/* Rail Lines Toggle */}
+              <div className="mt-3 pt-3 border-t border-gray-700">
+                <button
+                  onClick={() => setShowRailLines(prev => !prev)}
+                  className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-all ${
+                    showRailLines
+                      ? 'bg-[#e34c26]/20 text-[#e34c26] border border-[#e34c26]/40'
+                      : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:text-gray-300 hover:border-gray-600'
+                  }`}
+                  data-testid="toggle-rail-lines"
+                >
+                  <Layers size={14} />
+                  Rail Lines
+                  <span className={`ml-auto text-[9px] uppercase tracking-wider ${showRailLines ? 'text-[#e34c26]' : 'text-gray-500'}`}>
+                    {showRailLines ? 'ON' : 'OFF'}
+                  </span>
+                </button>
               </div>
             </div>
 
