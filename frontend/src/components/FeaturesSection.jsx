@@ -1,13 +1,13 @@
 import React from 'react';
 import {
   Camera, BarChart3, Map, Brain, Users, Share2,
-  Bell, Heart, Compass, Mail, Pencil, Shield
+  Bell, Heart, Compass, Mail, Pencil, Shield, Layers
 } from 'lucide-react';
 import { features } from '../data/mockData';
 
 const iconMap = {
   Camera, BarChart3, Map, Brain, Users, Share2,
-  Bell, Heart, Compass, Mail, Pencil, Shield
+  Bell, Heart, Compass, Mail, Pencil, Shield, Layers
 };
 
 const FeaturesSection = () => {
