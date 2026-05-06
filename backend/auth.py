@@ -52,7 +52,7 @@ class UserResponse(BaseModel):
     picture: Optional[str] = None
     auth_provider: Optional[str] = None
     is_profile_public: bool = False
-    auth_provider: Optional[str] = None
+    timezone: Optional[str] = None
 
 class UserUpdate(BaseModel):
     name: Optional[str] = None
@@ -271,7 +271,8 @@ async def get_me(request: Request):
         name=user["name"],
         picture=user.get("picture"),
         auth_provider=user.get("auth_provider"),
-        is_profile_public=user.get("is_profile_public", False)
+        is_profile_public=user.get("is_profile_public", False),
+        timezone=user.get("timezone")
     )
 
 @auth_router.post("/logout")
@@ -366,6 +367,19 @@ async def toggle_profile_visibility(data: ProfileVisibilityUpdate, request: Requ
         {"$set": {"is_profile_public": data.is_profile_public}}
     )
     return {"message": "Profile visibility updated", "is_profile_public": data.is_profile_public}
+
+
+class TimezoneUpdate(BaseModel):
+    timezone: str
+
+@auth_router.put("/profile/timezone")
+async def update_timezone(data: TimezoneUpdate, request: Request):
+    user = await get_current_user(request)
+    await db.users.update_one(
+        {"user_id": user["user_id"]},
+        {"$set": {"timezone": data.timezone}}
+    )
+    return {"message": "Timezone updated", "timezone": data.timezone}
 
 
 # ── Forgot Password / Reset ─────────────────────────────────────

@@ -35,29 +35,78 @@ logging.basicConfig(
 logger = logging.getLogger("server")
 
 # --------------------------------------------------
-# Daily Digest Scheduler (4:00 PM AEST = 6:00 AM UTC)
+# Daily Digest Scheduler (per-user timezone, sends at 4:00 PM local)
 # --------------------------------------------------
-DIGEST_HOUR = 6  # 6:00 AM UTC = 4:00 PM AEST
-DIGEST_MINUTE = 0
+DIGEST_TARGET_HOUR = 16  # 4:00 PM in user's local timezone
 
 async def digest_scheduler():
-    """Background loop that sends the daily digest at DIGEST_HOUR:DIGEST_MINUTE UTC (4:00 PM AEST)."""
+    """Background loop that checks every 15 minutes and sends digests to users whose local time is 4:00 PM."""
     from datetime import datetime, timezone, timedelta
-    logger.info(f"Digest scheduler started — will send daily at {DIGEST_HOUR:02d}:{DIGEST_MINUTE:02d} UTC")
+    logger.info("Digest scheduler started — will send at 16:00 in each user's local timezone")
     while True:
-        now = datetime.now(timezone.utc)
-        target = now.replace(hour=DIGEST_HOUR, minute=DIGEST_MINUTE, second=0, microsecond=0)
-        if target <= now:
-            target += timedelta(days=1)
-        wait_seconds = (target - now).total_seconds()
-        logger.info(f"Next digest in {wait_seconds/3600:.1f}h ({target.isoformat()})")
-        await asyncio.sleep(wait_seconds)
+        await asyncio.sleep(900)  # Check every 15 minutes
         try:
-            logger.info("Running scheduled daily digest...")
-            count = await send_digest_to_all()
-            logger.info(f"Scheduled digest sent to {count} user(s)")
+            now_utc = datetime.now(timezone.utc)
+            current_utc_hour = now_utc.hour
+            current_utc_minute = now_utc.minute
+
+            # Only process at :00 and :15 and :30 and :45 marks (within 15 min window)
+            # Find which UTC offsets would make it 16:00 local right now
+            # offset = local - UTC, so local_hour = utc_hour + offset => offset = 16 - utc_hour
+            target_offset = DIGEST_TARGET_HOUR - current_utc_hour
+            # Normalize to valid range
+            if target_offset > 14:
+                target_offset -= 24
+            if target_offset < -12:
+                target_offset += 24
+
+            # Find users whose timezone offset matches (within 15 min window)
+            # We store timezone as IANA string, so we need to check which offsets are currently at 16:00
+            users = await db.users.find(
+                {"timezone": {"$exists": True, "$ne": None}},
+                {"_id": 0, "password_hash": 0}
+            ).to_list(10000)
+
+            # Also check if we already sent today to avoid duplicates
+            today_str = now_utc.strftime("%Y-%m-%d")
+
+            sent = 0
+            for user in users:
+                tz_str = user.get("timezone")
+                if not tz_str or not user.get("email"):
+                    continue
+
+                try:
+                    from zoneinfo import ZoneInfo
+                    user_tz = ZoneInfo(tz_str)
+                    user_now = now_utc.astimezone(user_tz)
+
+                    # Check if it's between 16:00 and 16:14 in user's local time
+                    if user_now.hour == DIGEST_TARGET_HOUR and user_now.minute < 15:
+                        # Check if already sent today
+                        already_sent = await db.digest_log.find_one({
+                            "user_id": user["user_id"],
+                            "date": today_str
+                        })
+                        if already_sent:
+                            continue
+
+                        data = await build_digest_data(user["user_id"])
+                        html = build_digest_html(user.get("name", "Trainspotter"), data)
+                        send_digest_email(user["email"], user.get("name", "Trainspotter"), html)
+                        await db.digest_log.insert_one({
+                            "user_id": user["user_id"],
+                            "date": today_str,
+                            "sent_at": now_utc
+                        })
+                        sent += 1
+                except Exception as e:
+                    logger.error(f"Digest error for {user.get('email')}: {e}")
+
+            if sent > 0:
+                logger.info(f"Sent {sent} timezone-based digest(s)")
         except Exception as e:
-            logger.error(f"Scheduled digest failed: {e}")
+            logger.error(f"Digest scheduler error: {e}")
 
 # --------------------------------------------------
 # App Lifecycle (Mongo)

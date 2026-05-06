@@ -53,6 +53,20 @@ export const AuthProvider = ({ children }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const syncTimezone = async () => {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz) {
+      try {
+        await safeFetch(`${API}/auth/profile/timezone`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ timezone: tz })
+        });
+      } catch (e) {}
+    }
+  };
+
   const login = async (email, password) => {
     const response = await safeFetch(`${API}/auth/login`, {
       method: 'POST',
@@ -68,6 +82,7 @@ export const AuthProvider = ({ children }) => {
     }
     
     setUser(data);
+    syncTimezone();
     return data;
   };
 
@@ -86,6 +101,7 @@ export const AuthProvider = ({ children }) => {
     }
     
     setUser(data);
+    syncTimezone();
     return data;
   };
 
@@ -113,6 +129,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     setUser(data);
+    syncTimezone();
     return data;
   };
 

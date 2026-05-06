@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import safeFetch from '../lib/safeFetch';
 import {
   LayoutGrid, LogOut, User, Loader2, Camera, Settings, Lock, Trash2,
-  Menu, Check, AlertTriangle, Mail, Shield, Globe, Link2, Copy
+  Menu, Check, AlertTriangle, Mail, Shield, Globe, Link2, Copy, Clock
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -78,6 +78,7 @@ const ProfilePage = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const [isProfilePublic, setIsProfilePublic] = useState(false);
   const [profileLinkCopied, setProfileLinkCopied] = useState(false);
+  const [userTimezone, setUserTimezone] = useState('');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -89,6 +90,7 @@ const ProfilePage = () => {
     if (user) {
       setName(user.name || '');
       setIsProfilePublic(user.is_profile_public || false);
+      setUserTimezone(user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone);
     }
   }, [user]);
 
@@ -111,6 +113,21 @@ const ProfilePage = () => {
       }
     } catch (err) {
       console.error('Failed to toggle profile visibility:', err);
+    }
+  };
+
+  const handleTimezoneChange = async (e) => {
+    const tz = e.target.value;
+    setUserTimezone(tz);
+    try {
+      await safeFetch(`${API}/auth/profile/timezone`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ timezone: tz })
+      });
+    } catch (err) {
+      console.error('Failed to update timezone:', err);
     }
   };
 
@@ -420,6 +437,24 @@ const ProfilePage = () => {
               )}
             </button>
           )}
+        </div>
+
+        {/* Timezone Setting */}
+        <div className="bg-[#1a1a1c] border border-gray-800 rounded-lg p-4 md:p-6 mb-4 md:mb-6" data-testid="timezone-section">
+          <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+            <Clock size={18} className="text-orange-500" /> Timezone
+          </h3>
+          <p className="text-gray-500 text-xs mb-3">Your daily digest email is sent at 4:00 PM in your local timezone.</p>
+          <select
+            value={userTimezone}
+            onChange={handleTimezoneChange}
+            className="w-full bg-[#0f0f10] border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-gray-200 focus:border-orange-500 focus:outline-none"
+            data-testid="timezone-select"
+          >
+            {Intl.supportedValuesOf('timeZone').map(tz => (
+              <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
+            ))}
+          </select>
         </div>
 
         {/* Password Section */}
