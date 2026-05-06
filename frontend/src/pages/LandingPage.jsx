@@ -4,6 +4,7 @@ import HeroSection from '../components/HeroSection';
 import StatsSection from '../components/StatsSection';
 import FeaturesSection from '../components/FeaturesSection';
 import OpenSourceSection from '../components/OpenSourceSection';
+import YouTubeSection from '../components/YouTubeSection';
 import CTASection from '../components/CTASection';
 import Footer from '../components/Footer';
 
@@ -15,6 +16,7 @@ const LandingPage = () => {
       <StatsSection />
       <FeaturesSection />
       <OpenSourceSection />
+      <YouTubeSection />
       <CTASection />
       <Footer />
     </div>
