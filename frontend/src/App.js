@@ -16,6 +16,7 @@ import BookmarksPage from "./pages/BookmarksPage";
 import DiscoverPage from "./pages/DiscoverPage";
 import ResetPassword from "./pages/ResetPassword";
 import MapView from "./pages/MapView";
+import CommunityPage from "./pages/CommunityPage";
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
             <Route path="/discover" element={<DiscoverPage />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/map" element={<MapView />} />
+            <Route path="/community" element={<CommunityPage />} />
             <Route path="/log-sighting" element={<LogSighting />} />
             <Route path="/sightings" element={<MySightings />} />
             <Route path="/profile" element={<ProfilePage />} />
