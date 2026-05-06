@@ -56,6 +56,7 @@ const MobileNav = ({ user, onLogout }) => (
         <Link to="/feed" className="text-gray-300 hover:text-white py-2">Feed</Link>
         <Link to="/discover" className="text-gray-300 hover:text-white py-2">Discover</Link>
         <Link to="/bookmarks" className="text-gray-300 hover:text-white py-2">Bookmarks</Link>
+        <Link to="/community" className="text-gray-300 hover:text-white py-2">Community</Link>
         <Link to="/profile" className="text-gray-300 hover:text-white py-2">Profile</Link>
         <button onClick={onLogout} className="text-red-400 hover:text-red-300 py-2 text-left mt-4">
           <LogOut size={18} className="inline mr-2" /> Logout
@@ -156,6 +157,7 @@ const Dashboard = () => {
           <Link to="/feed" className="text-gray-600 text-sm hover:text-gray-900">Feed</Link>
           <Link to="/discover" className="text-gray-600 text-sm hover:text-gray-900">Discover</Link>
           <Link to="/bookmarks" className="text-gray-600 text-sm hover:text-gray-900">Bookmarks</Link>
+          <Link to="/community" className="text-gray-600 text-sm hover:text-gray-900">Community</Link>
         </nav>
         <div className="flex items-center gap-2 md:gap-4">
           <NotificationBell />
