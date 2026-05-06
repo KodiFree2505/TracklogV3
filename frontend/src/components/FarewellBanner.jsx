@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
+const BANNER_HEIGHT = 42;
+
 const FarewellBanner = () => {
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(() => {
+    return sessionStorage.getItem('farewell_banner_dismissed') === 'true';
+  });
 
   useEffect(() => {
-    const stored = sessionStorage.getItem('farewell_banner_dismissed');
-    if (stored === 'true') setDismissed(true);
-  }, []);
+    document.documentElement.style.setProperty('--banner-height', dismissed ? '0px' : `${BANNER_HEIGHT}px`);
+  }, [dismissed]);
 
   const handleDismiss = () => {
     setDismissed(true);

@@ -3,13 +3,13 @@ import { Button } from './ui/button';
 
 const HeroSection = () => {
   return (
-    <section className="relative min-h-screen pt-[94px]">
+    <section className="relative min-h-screen" style={{ paddingTop: 'calc(52px + var(--banner-height, 0px))' }}>
       {/* Background Image */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: `url('https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=1920&q=80')`,
-          marginTop: '94px'
+          marginTop: 'calc(52px + var(--banner-height, 0px))'
         }}
       >
         {/* Dark overlay */}
