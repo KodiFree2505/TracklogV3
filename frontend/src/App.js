@@ -2,6 +2,7 @@ import React from "react";
 import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import FarewellBanner from "./components/FarewellBanner";
 import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
 import AuthCallback from "./pages/AuthCallback";
@@ -23,6 +24,7 @@ function App() {
     <div className="App">
       <BrowserRouter>
         <AuthProvider>
+          <FarewellBanner />
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/auth" element={<AuthPage />} />
