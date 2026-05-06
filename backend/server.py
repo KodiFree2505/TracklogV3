@@ -35,13 +35,13 @@ logging.basicConfig(
 logger = logging.getLogger("server")
 
 # --------------------------------------------------
-# Daily Digest Scheduler (4:00 PM UTC)
+# Daily Digest Scheduler (4:00 PM AEST = 6:00 AM UTC)
 # --------------------------------------------------
-DIGEST_HOUR = 16  # 4:00 PM UTC
+DIGEST_HOUR = 6  # 6:00 AM UTC = 4:00 PM AEST
 DIGEST_MINUTE = 0
 
 async def digest_scheduler():
-    """Background loop that sends the daily digest at DIGEST_HOUR:DIGEST_MINUTE UTC."""
+    """Background loop that sends the daily digest at DIGEST_HOUR:DIGEST_MINUTE UTC (4:00 PM AEST)."""
     from datetime import datetime, timezone, timedelta
     logger.info(f"Digest scheduler started — will send daily at {DIGEST_HOUR:02d}:{DIGEST_MINUTE:02d} UTC")
     while True:
