@@ -207,11 +207,18 @@ const TrainDetail = ({ train, onBack }) => {
   );
 };
 
+const COUNTRIES = [
+  { code: 'Australia', label: 'Australia', flag: '\u{1F1E6}\u{1F1FA}' },
+  { code: 'United Kingdom', label: 'United Kingdom', flag: '\u{1F1EC}\u{1F1E7}' },
+  { code: 'United States', label: 'United States', flag: '\u{1F1FA}\u{1F1F8}' },
+];
+
 const TrainDatabase = () => {
   const { user, logout, loading } = useAuth();
   const navigate = useNavigate();
   const [trains, setTrains] = useState([]);
   const [states, setStates] = useState([]);
+  const [selectedCountry, setSelectedCountry] = useState('Australia');
   const [selectedState, setSelectedState] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [search, setSearch] = useState('');
@@ -222,16 +229,17 @@ const TrainDatabase = () => {
 
   useEffect(() => {
     if (!user) return;
-    safeFetch(`${API}/trains/states?country=Australia`, { credentials: 'include' })
+    setSelectedState('');
+    safeFetch(`${API}/trains/states?country=${encodeURIComponent(selectedCountry)}`, { credentials: 'include' })
       .then(r => r.ok ? r.json() : { states: [] })
       .then(d => setStates(d.states || []))
       .catch(() => {});
-  }, [user]);
+  }, [user, selectedCountry]);
 
   useEffect(() => {
     if (!user) return;
     setDataLoading(true);
-    const params = new URLSearchParams({ country: 'Australia' });
+    const params = new URLSearchParams({ country: selectedCountry });
     if (selectedState) params.set('state', selectedState);
     if (selectedStatus) params.set('status', selectedStatus);
     if (search) params.set('search', search);
@@ -240,7 +248,7 @@ const TrainDatabase = () => {
       .then(d => setTrains(d.trains || []))
       .catch(() => {})
       .finally(() => setDataLoading(false));
-  }, [user, selectedState, selectedStatus, search]);
+  }, [user, selectedCountry, selectedState, selectedStatus, search]);
 
   const handleLogout = async () => { await logout(); navigate('/'); };
 
@@ -280,9 +288,27 @@ const TrainDatabase = () => {
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-1">
                 <Train size={24} className="text-[#e34c26]" />
-                <h1 className="text-white text-2xl md:text-3xl font-bold">Australian Train Database</h1>
+                <h1 className="text-white text-2xl md:text-3xl font-bold">Train Database</h1>
               </div>
-              <p className="text-gray-400 text-sm">Comprehensive database of Australian rolling stock</p>
+              <p className="text-gray-400 text-sm">Comprehensive database of rolling stock around the world</p>
+            </div>
+
+            {/* Country Tabs */}
+            <div className="flex flex-wrap gap-2 mb-6" data-testid="country-tabs">
+              {COUNTRIES.map(c => (
+                <button
+                  key={c.code}
+                  onClick={() => setSelectedCountry(c.code)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    selectedCountry === c.code
+                      ? 'bg-[#e34c26] text-white'
+                      : 'bg-[#1a1a1c] text-gray-400 border border-gray-800 hover:border-gray-600 hover:text-gray-200'
+                  }`}
+                  data-testid={`country-tab-${c.code}`}
+                >
+                  {c.flag} {c.label}
+                </button>
+              ))}
             </div>
 
             {/* Filters */}

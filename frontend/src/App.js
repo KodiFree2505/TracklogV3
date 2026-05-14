@@ -20,6 +20,7 @@ import ResetPassword from "./pages/ResetPassword";
 import MapView from "./pages/MapView";
 import CommunityPage from "./pages/CommunityPage";
 import TrainDatabase from "./pages/TrainDatabase";
+import AdminPage from "./pages/AdminPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import LegalImprint from "./pages/LegalImprint";
@@ -44,6 +45,7 @@ function App() {
             <Route path="/map" element={<MapView />} />
             <Route path="/community" element={<CommunityPage />} />
             <Route path="/trains" element={<TrainDatabase />} />
+            <Route path="/admin" element={<AdminPage />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/legal" element={<LegalImprint />} />
