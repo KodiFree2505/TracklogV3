@@ -16,7 +16,7 @@ from public import public_router, set_db as set_public_db
 from ai_summary import ai_router, set_db as set_ai_db
 from social import social_router, set_db as set_social_db
 from digest import digest_router, set_db as set_digest_db, send_digest_to_all
-from trains import trains_router, set_db as set_trains_db, seed_australian_trains
+from trains import trains_router, set_db as set_trains_db, seed_australian_trains, migrate_vset_xpt_split
 
 # --------------------------------------------------
 # Paths & Env
@@ -136,6 +136,9 @@ async def lifespan(app: FastAPI):
 
     # Seed train database
     await seed_australian_trains()
+
+    # Migration: fix V Set / XPT split (if old combined entry exists)
+    await migrate_vset_xpt_split(db)
 
     # Start digest scheduler
     scheduler_task = asyncio.create_task(digest_scheduler())

@@ -278,6 +278,109 @@ async def seed_australian_trains():
     await db.trains.insert_many(all_trains)
     logger.info(f"Seeded {len(all_trains)} trains (AU/UK/US)")
 
+async def migrate_vset_xpt_split(database):
+    """One-time migration: split old 'V Set (XPT)' into separate V Set and XPT entries."""
+    old_entry = await database.trains.find_one({"name": "V Set (XPT)"})
+    if not old_entry:
+        return  # Already migrated or never had the old entry
+
+    logger.info("Migrating V Set / XPT split...")
+
+    # Update the old entry to be the V Set (electric EMU)
+    await database.trains.update_one({"name": "V Set (XPT)"}, {"$set": {
+        "name": "V Set",
+        "designation": "V Set",
+        "operator": "NSW TrainLink",
+        "train_type": "Electric Multiple Unit (Double-Deck)",
+        "status": "Withdrawn",
+        "description": "The V Sets were double-deck electric multiple units that operated NSW intercity services for 55 years (1970-2026). They served the Blue Mountains, Central Coast, Newcastle, and South Coast lines before being replaced by the Mariyung D Sets.",
+        "specs": {
+            "manufacturer": "Comeng",
+            "year_introduced": "1970",
+            "year_retired": "2026",
+            "top_speed_kmh": 115,
+            "capacity": 900,
+            "power_type": "Electric (1500V DC)",
+            "weight_tonnes": 50,
+            "length_m": 24.0,
+            "gauge_mm": 1435,
+            "number_built": 225,
+            "formation": "4-car / 8-car sets (225 total cars)"
+        },
+        "livery": [
+            {"name": "Original Blue & White", "description": "Blue and white SRA livery", "is_current": False},
+            {"name": "CityRail Blue", "description": "CityRail blue and yellow livery", "is_current": False},
+            {"name": "NSW TrainLink Blue & Yellow", "description": "Blue and yellow NSW TrainLink intercity livery with Bush Plum interior", "is_current": True},
+        ],
+        "routes": [
+            {"name": "Central Coast & Newcastle Line", "stations": ["Central", "Hornsby", "Gosford", "Wyong", "Newcastle"], "is_current": False, "coordinates": [[-33.8833, 151.2060], [-33.7030, 151.0990], [-33.4249, 151.3420], [-33.2817, 151.4230], [-32.9272, 151.7764]]},
+            {"name": "Blue Mountains Line", "stations": ["Central", "Strathfield", "Penrith", "Springwood", "Katoomba", "Lithgow"], "is_current": False, "coordinates": [[-33.8833, 151.2060], [-33.8742, 151.0940], [-33.7506, 150.6943], [-33.6988, 150.5630], [-33.7314, 150.3120], [-33.4907, 150.1570]]},
+            {"name": "South Coast Line", "stations": ["Central", "Hurstville", "Sutherland", "Wollongong", "Kiama"], "is_current": False, "coordinates": [[-33.8833, 151.2060], [-33.9668, 151.1004], [-34.0312, 151.0572], [-34.4240, 150.8930], [-34.6710, 150.8540]]},
+        ],
+        "history": [
+            {"year": "1970", "event": "First V Set cars built by Comeng, entered service on intercity routes"},
+            {"year": "1989", "event": "Final V Set cars delivered (225 total cars over two decades)"},
+            {"year": "2013", "event": "Interior refurbishment with Bush Plum themed upholstery"},
+            {"year": "2024", "event": "Replacement by Mariyung D Sets commenced"},
+            {"year": "2025", "event": "Withdrawn from Central Coast & Newcastle Line (27 Jun)"},
+            {"year": "2026", "event": "Final V Set service, Lithgow to Central (30 Jan). 55 years of service ended"},
+        ],
+    }})
+
+    # Check if XPT already exists
+    existing_xpt = await database.trains.find_one({"name": "XPT (eXpress Passenger Train)"})
+    if not existing_xpt:
+        await database.trains.insert_one({
+            "train_id": f"train_{uuid.uuid4().hex[:12]}",
+            "name": "XPT (eXpress Passenger Train)",
+            "designation": "XPT / X Set",
+            "country": "Australia",
+            "state": "New South Wales",
+            "operator": "NSW TrainLink",
+            "train_type": "Diesel-Electric Express",
+            "status": "In Service",
+            "description": "The XPT (eXpress Passenger Train) is based on the British HST/InterCity 125 design. It has served NSW long-distance regional and interstate routes since 1982. Currently undergoing a life extension program to continue service while replacement plans are developed.",
+            "specs": {
+                "manufacturer": "Comeng / ABB",
+                "year_introduced": "1982",
+                "top_speed_kmh": 160,
+                "capacity": 320,
+                "power_type": "Diesel-Electric (Paxman VP185)",
+                "axle_config": "Bo-Bo (power cars)",
+                "weight_tonnes": 78,
+                "length_m": 17.35,
+                "gauge_mm": 1435,
+                "power_output_kw": 1492,
+                "number_built": 19,
+                "formation": "Power Car + 5-6 Coaches + Power Car (7 sets)"
+            },
+            "livery": [
+                {"name": "Original Indian Pacific Blue", "description": "Dark blue with white stripe and Indian Pacific branding", "is_current": False},
+                {"name": "CountryLink Green & Yellow", "description": "Green body with yellow stripe and CountryLink logo", "is_current": False},
+                {"name": "NSW TrainLink Blue & White", "description": "Updated blue and white NSW TrainLink livery", "is_current": True},
+            ],
+            "routes": [
+                {"name": "Sydney to Melbourne", "stations": ["Central", "Campbelltown", "Goulburn", "Canberra", "Albury", "Southern Cross"], "is_current": True, "coordinates": [[-33.8833, 151.2060], [-34.0654, 150.8142], [-34.7515, 149.7209], [-35.2809, 149.1300], [-36.0808, 146.9161], [-37.8183, 144.9528]]},
+                {"name": "Sydney to Brisbane", "stations": ["Central", "Maitland", "Coffs Harbour", "Casino", "Roma Street"], "is_current": True, "coordinates": [[-33.8833, 151.2060], [-32.7337, 151.5545], [-30.2963, 153.1138], [-28.8662, 153.0479], [-27.4658, 153.0188]]},
+                {"name": "Sydney to Dubbo", "stations": ["Central", "Lithgow", "Orange", "Dubbo"], "is_current": True, "coordinates": [[-33.8833, 151.2060], [-33.4907, 150.1570], [-33.2836, 149.0995], [-32.2432, 148.6058]]},
+                {"name": "Sydney to Grafton", "stations": ["Central", "Maitland", "Taree", "Coffs Harbour", "Grafton"], "is_current": True, "coordinates": [[-33.8833, 151.2060], [-32.7337, 151.5545], [-31.9100, 152.4622], [-30.2963, 153.1138], [-29.6917, 152.9333]]},
+            ],
+            "history": [
+                {"year": "1981", "event": "First XPT power car built by Comeng at Granville"},
+                {"year": "1982", "event": "Entered revenue service on Sydney-Melbourne route"},
+                {"year": "1982", "event": "Set Australian rail speed record of 183 km/h during testing"},
+                {"year": "1990", "event": "Fleet expanded for regional NSW services"},
+                {"year": "2015", "event": "Some power cars re-engined with Paxman VP185 units"},
+                {"year": "2025", "event": "XPT Life Extension Project commenced"},
+                {"year": "2026", "event": "Sydney-Grafton XPT returned to service after refurbishment (28 Apr)"},
+            ],
+            "image_url": None,
+            "created_at": datetime.now(timezone.utc),
+        })
+
+    logger.info("V Set / XPT migration complete")
+
+
 
 def get_australian_trains():
     return [
