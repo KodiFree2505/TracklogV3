@@ -292,7 +292,7 @@ def get_australian_trains():
             "status": "In Service",
             "description": "The Waratah is Sydney's most common suburban train, introduced in 2011. Named after the NSW floral emblem, these reliable 8-car sets operate across most Sydney Trains lines.",
             "specs": {
-                "manufacturer": "Downer Rail / Changchun Railway Vehicles",
+                "manufacturer": "Reliance Rail (Downer/Changchun JV)",
                 "year_introduced": "2011",
                 "top_speed_kmh": 130,
                 "capacity": 896,
@@ -341,7 +341,7 @@ def get_australian_trains():
                 "length_m": 163.4,
                 "gauge_mm": 1435,
                 "power_output_kw": 4800,
-                "number_built": 24,
+                "number_built": 41,
                 "formation": "8-car (T-M-T-M-M-T-M-T)"
             },
             "livery": [
@@ -365,7 +365,7 @@ def get_australian_trains():
             "state": "New South Wales",
             "operator": "Sydney Trains / NSW TrainLink",
             "train_type": "Electric Multiple Unit",
-            "status": "Testing",
+            "status": "In Service",
             "description": "The Mariyung (meaning 'emu' in the Darug language) is the New Intercity Fleet replacing V Sets on intercity services. Features airline-style seating, Wi-Fi, and power outlets.",
             "specs": {
                 "manufacturer": "Hyundai Rotem",
@@ -614,7 +614,7 @@ def get_australian_trains():
                 "length_m": 148,
                 "gauge_mm": 1600,
                 "power_output_kw": 4000,
-                "number_built": 65,
+                "number_built": 70,
                 "formation": "7-car"
             },
             "livery": [
@@ -1014,7 +1014,7 @@ def get_uk_trains():
             "train_type": "Bi-Mode / Electric Multiple Unit",
             "status": "In Service",
             "description": "Hitachi's Intercity Express Programme trains replacing the iconic HST. The Class 800 is bi-mode (electric/diesel), Class 801 is electric only. Operates on Great Western and East Coast main lines.",
-            "specs": {"manufacturer": "Hitachi", "year_introduced": "2017", "top_speed_kmh": 200, "capacity": 596, "power_type": "Bi-Mode (25kV AC + Diesel)", "axle_config": "Bo-Bo", "weight_tonnes": 330, "length_m": 200, "gauge_mm": 1435, "power_output_kw": 3600, "number_built": 122, "formation": "5-car / 9-car"},
+            "specs": {"manufacturer": "Hitachi", "year_introduced": "2017", "top_speed_kmh": 200, "capacity": 596, "power_type": "Bi-Mode (25kV AC + Diesel)", "axle_config": "Bo-Bo", "weight_tonnes": 330, "length_m": 200, "gauge_mm": 1435, "power_output_kw": 3600, "number_built": 182, "formation": "5-car / 9-car"},
             "livery": [
                 {"name": "GWR Green", "description": "Dark green Great Western Railway livery", "is_current": True},
                 {"name": "LNER Red", "description": "Red LNER Azuma livery", "is_current": True},
@@ -1039,7 +1039,7 @@ def get_uk_trains():
             "train_type": "Diesel-Electric High Speed",
             "status": "Withdrawn",
             "description": "The legendary InterCity 125, the world's fastest diesel train. It held the world speed record for diesel traction at 238 km/h (148 mph) set in 1987. Served British railways for over 40 years.",
-            "specs": {"manufacturer": "BREL / Paxman", "year_introduced": "1976", "year_retired": "2023", "top_speed_kmh": 201, "capacity": 480, "power_type": "Diesel-Electric", "axle_config": "Bo-Bo (power cars)", "weight_tonnes": 70, "length_m": 17.8, "gauge_mm": 1435, "power_output_kw": 1680, "number_built": 197, "formation": "Power Car + 7-9 Mk3 Coaches + Power Car"},
+            "specs": {"manufacturer": "BREL / Paxman", "year_introduced": "1976", "year_retired": "2025", "top_speed_kmh": 201, "capacity": 480, "power_type": "Diesel-Electric", "axle_config": "Bo-Bo (power cars)", "weight_tonnes": 70, "length_m": 17.8, "gauge_mm": 1435, "power_output_kw": 1680, "number_built": 197, "formation": "Power Car + 7-9 Mk3 Coaches + Power Car"},
             "livery": [
                 {"name": "BR Blue/Grey InterCity", "description": "Original blue and grey InterCity livery", "is_current": False},
                 {"name": "InterCity Swallow", "description": "Light grey with dark grey roof and swallow motif", "is_current": False},
@@ -1284,8 +1284,8 @@ def get_us_trains():
             "state": "California",
             "operator": "Caltrain",
             "train_type": "Electric Multiple Unit",
-            "status": "Testing",
-            "description": "New electric trains for the electrified Caltrain corridor between San Francisco and San Jose. Replacing diesel-hauled service with faster, quieter, zero-emission trains.",
+            "status": "In Service",
+            "description": "Electric trains for the electrified Caltrain corridor between San Francisco and San Jose. Replacing diesel-hauled service with faster, quieter, zero-emission trains.",
             "specs": {"manufacturer": "Stadler Rail", "year_introduced": "2024", "top_speed_kmh": 177, "capacity": 741, "power_type": "Electric (25kV AC)", "weight_tonnes": 268, "length_m": 112, "gauge_mm": 1435, "power_output_kw": 6000, "number_built": 19, "formation": "6-car bi-level"},
             "livery": [{"name": "Caltrain Red & Silver", "description": "Silver with Caltrain red striping", "is_current": True}],
             "routes": [
