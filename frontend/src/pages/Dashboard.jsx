@@ -53,6 +53,7 @@ const MobileNav = ({ user, onLogout }) => (
         <Link to="/sightings" className="text-gray-300 hover:text-white py-2">My Sightings</Link>
         <Link to="/log-sighting" className="text-gray-300 hover:text-white py-2">Log Sighting</Link>
         <Link to="/map" className="text-gray-300 hover:text-white py-2">Map</Link>
+        <Link to="/trains" className="text-gray-300 hover:text-white py-2">Train Database</Link>
         <Link to="/feed" className="text-gray-300 hover:text-white py-2">Feed</Link>
         <Link to="/discover" className="text-gray-300 hover:text-white py-2">Discover</Link>
         <Link to="/bookmarks" className="text-gray-300 hover:text-white py-2">Bookmarks</Link>
@@ -154,6 +155,7 @@ const Dashboard = () => {
           <Link to="/sightings" className="text-gray-600 text-sm hover:text-gray-900">My Sightings</Link>
           <Link to="/log-sighting" className="text-gray-600 text-sm hover:text-gray-900">Log Sighting</Link>
           <Link to="/map" className="text-gray-600 text-sm hover:text-gray-900">Map</Link>
+          <Link to="/trains" className="text-gray-600 text-sm hover:text-gray-900">Trains</Link>
           <Link to="/feed" className="text-gray-600 text-sm hover:text-gray-900">Feed</Link>
           <Link to="/discover" className="text-gray-600 text-sm hover:text-gray-900">Discover</Link>
           <Link to="/bookmarks" className="text-gray-600 text-sm hover:text-gray-900">Bookmarks</Link>

@@ -110,6 +110,7 @@ const MobileNav = ({ user, onLogout }) => (
         <Link to="/sightings" className="text-gray-300 hover:text-white py-2">My Sightings</Link>
         <Link to="/log-sighting" className="text-gray-300 hover:text-white py-2">Log Sighting</Link>
         <Link to="/map" className="text-gray-300 hover:text-white py-2">Map</Link>
+        <Link to="/trains" className="text-gray-300 hover:text-white py-2">Train Database</Link>
         <Link to="/feed" className="text-gray-300 hover:text-white py-2">Feed</Link>
         <Link to="/bookmarks" className="text-white font-medium py-2">Bookmarks</Link>
         <Link to="/community" className="text-gray-300 hover:text-white py-2">Community</Link>
@@ -173,6 +174,7 @@ export default function BookmarksPage() {
           <Link to="/sightings" className="text-gray-600 text-sm hover:text-gray-900">My Sightings</Link>
           <Link to="/log-sighting" className="text-gray-600 text-sm hover:text-gray-900">Log Sighting</Link>
           <Link to="/map" className="text-gray-600 text-sm hover:text-gray-900">Map</Link>
+          <Link to="/trains" className="text-gray-600 text-sm hover:text-gray-900">Trains</Link>
           <Link to="/feed" className="text-gray-600 text-sm hover:text-gray-900">Feed</Link>
           <Link to="/bookmarks" className="text-gray-800 font-medium text-sm">Bookmarks</Link>
           <Link to="/community" className="text-gray-600 text-sm hover:text-gray-900">Community</Link>

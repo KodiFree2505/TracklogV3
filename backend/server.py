@@ -16,6 +16,7 @@ from public import public_router, set_db as set_public_db
 from ai_summary import ai_router, set_db as set_ai_db
 from social import social_router, set_db as set_social_db
 from digest import digest_router, set_db as set_digest_db, send_digest_to_all
+from trains import trains_router, set_db as set_trains_db, seed_australian_trains
 
 # --------------------------------------------------
 # Paths & Env
@@ -129,8 +130,12 @@ async def lifespan(app: FastAPI):
     set_ai_db(db)
     set_social_db(db)
     set_digest_db(db)
+    set_trains_db(db)
 
     logger.info(f"Connected to MongoDB: {db_name}")
+
+    # Seed train database
+    await seed_australian_trains()
 
     # Start digest scheduler
     scheduler_task = asyncio.create_task(digest_scheduler())
@@ -165,6 +170,7 @@ api_router.include_router(public_router)
 api_router.include_router(ai_router)
 api_router.include_router(social_router)
 api_router.include_router(digest_router)
+api_router.include_router(trains_router)
 
 app.include_router(api_router)
 

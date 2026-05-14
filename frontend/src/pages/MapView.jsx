@@ -184,6 +184,7 @@ const MapView = () => {
           <Link to="/sightings" className="text-gray-600 text-sm hover:text-gray-900">My Sightings</Link>
           <Link to="/log-sighting" className="text-gray-600 text-sm hover:text-gray-900">Log Sighting</Link>
           <Link to="/map" className="text-gray-800 font-medium text-sm">Map</Link>
+          <Link to="/trains" className="text-gray-600 text-sm hover:text-gray-900">Trains</Link>
           <Link to="/feed" className="text-gray-600 text-sm hover:text-gray-900">Feed</Link>
           <Link to="/discover" className="text-gray-600 text-sm hover:text-gray-900">Discover</Link>
           <Link to="/bookmarks" className="text-gray-600 text-sm hover:text-gray-900">Bookmarks</Link>
