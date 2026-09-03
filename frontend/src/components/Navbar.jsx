@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 
 const Navbar = () => {
   return (
-    <nav className="fixed left-0 right-0 z-50" style={{ top: 'var(--banner-height, 0px)' }}>
+    <nav className="fixed top-0 left-0 right-0 z-50">
       {/* Yellow top bar */}
       <div className="bg-[#FFE500] h-[52px] flex items-center justify-between px-4 md:px-12 lg:px-24">
         {/* Logo */}

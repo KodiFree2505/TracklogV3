@@ -2,7 +2,6 @@ import React from "react";
 import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-import FarewellBanner from "./components/FarewellBanner";
 import CookieConsent from "./components/CookieConsent";
 import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
@@ -31,7 +30,6 @@ function App() {
     <div className="App">
       <BrowserRouter>
         <AuthProvider>
-          <FarewellBanner />
           <CookieConsent />
           <Routes>
             <Route path="/" element={<LandingPage />} />

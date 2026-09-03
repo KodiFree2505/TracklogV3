@@ -56,7 +56,4 @@ body {
   z-index: 1200 !important;
 }
 
-/* Banner height variable - set by FarewellBanner component */
-:root {
-  --banner-height: 42px;
-}
+/* Banner height variable - no longer needed */
