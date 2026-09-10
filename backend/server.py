@@ -15,7 +15,7 @@ from sightings import sightings_router, set_db as set_sightings_db
 from public import public_router, set_db as set_public_db
 from ai_summary import ai_router, set_db as set_ai_db
 from social import social_router, set_db as set_social_db
-from digest import digest_router, set_db as set_digest_db, send_digest_to_all
+from digest import digest_router, set_db as set_digest_db, send_digest_to_all, build_digest_data, build_digest_html, send_digest_email
 from trains import trains_router, set_db as set_trains_db, seed_australian_trains, migrate_vset_xpt_split
 
 # --------------------------------------------------
@@ -34,6 +34,9 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger("server")
+
+# Module-level db reference for the digest scheduler
+_scheduler_db = None
 
 # --------------------------------------------------
 # Daily Digest Scheduler (per-user timezone, sends at 4:00 PM local)
@@ -63,7 +66,7 @@ async def digest_scheduler():
 
             # Find users whose timezone offset matches (within 15 min window)
             # We store timezone as IANA string, so we need to check which offsets are currently at 16:00
-            users = await db.users.find(
+            users = await _scheduler_db.users.find(
                 {"timezone": {"$exists": True, "$ne": None}},
                 {"_id": 0, "password_hash": 0}
             ).to_list(10000)
@@ -85,7 +88,7 @@ async def digest_scheduler():
                     # Check if it's between 16:00 and 16:14 in user's local time
                     if user_now.hour == DIGEST_TARGET_HOUR and user_now.minute < 15:
                         # Check if already sent today
-                        already_sent = await db.digest_log.find_one({
+                        already_sent = await _scheduler_db.digest_log.find_one({
                             "user_id": user["user_id"],
                             "date": today_str
                         })
@@ -95,7 +98,7 @@ async def digest_scheduler():
                         data = await build_digest_data(user["user_id"])
                         html = build_digest_html(user.get("name", "Trainspotter"), data)
                         send_digest_email(user["email"], user.get("name", "Trainspotter"), html)
-                        await db.digest_log.insert_one({
+                        await _scheduler_db.digest_log.insert_one({
                             "user_id": user["user_id"],
                             "date": today_str,
                             "sent_at": now_utc
@@ -133,6 +136,10 @@ async def lifespan(app: FastAPI):
     set_trains_db(db)
 
     logger.info(f"Connected to MongoDB: {db_name}")
+
+    # Set scheduler db reference
+    global _scheduler_db
+    _scheduler_db = db
 
     # Seed train database
     await seed_australian_trains()

@@ -3,6 +3,7 @@ import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import CookieConsent from "./components/CookieConsent";
+import OutageBanner from "./components/OutageBanner";
 import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
 import AuthCallback from "./pages/AuthCallback";
@@ -30,6 +31,7 @@ function App() {
     <div className="App">
       <BrowserRouter>
         <AuthProvider>
+          <OutageBanner />
           <CookieConsent />
           <Routes>
             <Route path="/" element={<LandingPage />} />
